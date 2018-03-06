@@ -30,6 +30,7 @@
                  [org.webjars/font-awesome "5.0.6"]
                  [re-frame "0.10.5"]
                  [reagent "0.7.0"]
+                 [refactor-nrepl "2.3.1"]
                  [ring-webjars "0.2.0"]
                  [ring/ring-core "1.6.3"]
                  [ring/ring-defaults "0.3.1"]
@@ -50,14 +51,16 @@
   [:target-path
    [:cljsbuild :builds :app :compiler :output-dir]
    [:cljsbuild :builds :app :compiler :output-to]]
+
   :figwheel
   {:http-server-root "public"
    :nrepl-port 7002
    :css-dirs ["resources/public/css"]
+   :init todo-split.core/-main
    :nrepl-middleware
    [cemerick.piggieback/wrap-cljs-repl
+    refactor-nrepl.middleware/wrap-refactor
     cider.nrepl/cider-middleware]}
-  
 
   :profiles
   {:uberjar {:omit-source true

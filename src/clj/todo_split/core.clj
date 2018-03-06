@@ -6,8 +6,16 @@
             [cider.nrepl :refer [cider-nrepl-handler]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.tools.logging :as log]
+            [refactor-nrepl.middleware]
             [mount.core :as mount])
   (:gen-class))
+
+(def nrepl-handler
+  "A development NREPL handler with standard CIDER middleware and
+  refactor-nrepl middleware."
+  (apply clojure.tools.nrepl.server/default-handler
+         (cons #'refactor-nrepl.middleware/wrap-refactor
+               (map resolve cider.nrepl/cider-middleware))))
 
 (def cli-options
   [["-p" "--port PORT" "Port number"
@@ -26,7 +34,7 @@
 (mount/defstate ^{:on-reload :noop} repl-server
   :start
   (when-let [nrepl-port (env :nrepl-port)]
-    (repl/start {:port nrepl-port :handler cider-nrepl-handler}))
+    (repl/start {:port nrepl-port :handler nrepl-handler}))
   :stop
   (when repl-server
     (repl/stop repl-server)))
