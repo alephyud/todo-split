@@ -9,6 +9,7 @@
                  [cljs-ajax "0.7.3"]
                  [com.google.guava/guava "20.0"]
                  [com.novemberain/monger "3.1.0" :exclusions [com.google.guava/guava]]
+                 [com.rpl/specter "1.1.0"]
                  [compojure "1.6.0"]
                  [cprop "0.1.11"]
                  [funcool/struct "1.2.0"]
@@ -30,12 +31,13 @@
                  [org.webjars/font-awesome "5.0.6"]
                  [re-frame "0.10.5"]
                  [reagent "0.7.0"]
-                 [refactor-nrepl "2.3.1"]
+                 [refactor-nrepl "2.4.0-SNAPSHOT"]
                  [ring-webjars "0.2.0"]
                  [ring/ring-core "1.6.3"]
                  [ring/ring-defaults "0.3.1"]
                  [secretary "1.2.3"]
-                 [selmer "1.11.7"]]
+                 [selmer "1.11.7"]
+                 [kee-frame "0.1.5"]]
 
   :min-lein-version "2.0.0"
   
@@ -74,12 +76,11 @@
                  :output-to "target/cljsbuild/public/js/app.js"
                  :source-map "target/cljsbuild/public/js/app.js.map"
                  :optimizations :advanced
+                 :aot-cache true
                  :pretty-print false
                  :closure-warnings
                  {:externs-validation :off :non-standard-jsdoc :off}
                  :externs ["react/externs/react.js"]}}}}
-             
-             
              :aot :all
              :uberjar-name "todo-split.jar"
              :source-paths ["env/prod/clj"]
@@ -116,10 +117,8 @@
                       :optimizations :none
                       :pretty-print true
                       :closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}
+                      :aot-cache true
                       :preloads [day8.re-frame-10x.preload]}}}}
-                  
-                  
-                  
                   :doo {:build "test"}
                   :source-paths ["env/dev/clj"]
                   :resource-paths ["env/dev/resources"]
@@ -136,8 +135,7 @@
                      {:output-to "target/test.js"
                       :main "todo-split.doo-runner"
                       :optimizations :whitespace
-                      :pretty-print true}}}}
-                  
-                  }
+                      :aot-cache true
+                      :pretty-print true}}}}}
    :profiles/dev {}
    :profiles/test {}})

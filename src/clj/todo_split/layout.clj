@@ -1,10 +1,12 @@
 (ns todo-split.layout
-  (:require [selmer.parser :as parser]
+  (:require [clojure.spec.alpha :as s]
+            [selmer.parser :as parser]
             [selmer.filters :as filters]
             [markdown.core :refer [md-to-html-string]]
             [ring.util.http-response :refer [content-type ok]]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
-            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
+            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
+            [clojure.java.io :as io]))
 
 (declare ^:dynamic *app-context*)
 (parser/set-resource-path!  (clojure.java.io/resource "templates"))

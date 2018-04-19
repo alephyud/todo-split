@@ -7,7 +7,8 @@
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.tools.logging :as log]
             [refactor-nrepl.middleware]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [schema.core :as s])
   (:gen-class))
 
 (def nrepl-handler

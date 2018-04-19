@@ -1,4 +1,6 @@
 /target
+/node_modules
+/dist
 /lib
 /classes
 /checkouts
@@ -14,3 +16,7 @@ profiles.clj
 /log
 .projectile
 figwheel_server.log
+npm-debug.log
+*.swp
+*.swo
+
