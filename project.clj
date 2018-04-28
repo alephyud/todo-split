@@ -22,7 +22,7 @@
                  [metosin/ring-http-response "0.9.0"]
                  [mount "0.1.12"]
                  [org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.9.946" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.238" :scope "provided"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.4.0"]
                  [org.clojure/tools.reader "1.2.2"]
@@ -37,7 +37,7 @@
                  [ring/ring-defaults "0.3.1"]
                  [secretary "1.2.3"]
                  [selmer "1.11.7"]
-                 [kee-frame "0.1.5"]]
+                 [kee-frame "0.2.1"]]
 
   :min-lein-version "2.0.0"
   
@@ -94,20 +94,21 @@
                                  [com.cemerick/piggieback "0.2.2"]
                                  [day8.re-frame/re-frame-10x "0.2.0"]
                                  [doo "0.1.8"]
-                                 [figwheel-sidecar "0.5.15"]
+                                 [figwheel-sidecar "0.5.16-SNAPSHOT"]
                                  [pjstadig/humane-test-output "0.8.3"]
                                  [prone "1.5.0"]
                                  [ring/ring-devel "1.6.3"]
-                                 [ring/ring-mock "0.3.2"]]
+                                 [ring/ring-mock "0.3.2"]
+                                 [org.clojure/test.check "0.9.0"]]
                   :plugins      [[com.jakemccrary/lein-test-refresh "0.19.0"]
                                  [lein-doo "0.1.8"]
-                                 [lein-figwheel "0.5.15"]
-                                 [org.clojure/clojurescript "1.9.946"]]
+                                 [lein-figwheel "0.5.16-SNAPSHOT"]
+                                 [org.clojure/clojurescript "1.10.238"]]
                   :cljsbuild
                   {:builds
                    {:app
                     {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-                     :figwheel {:on-jsload "todo-split.core/mount-components"}
+                     :figwheel {:on-jsload "todo-split.core/start-kf!"}
                      :compiler
                      {:main "todo-split.app"
                       :asset-path "/js/out"

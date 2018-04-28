@@ -2,8 +2,10 @@
   (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
             [pjstadig.humane-test-output]
             [reagent.core :as reagent :refer [atom]]
-            [todo-split.core :as rc]))
+            [todo-split.models.todos :as todos]))
 
 (deftest test-home
   (is (= true true)))
 
+(deftest test-flat-repr
+  (is (todos/flat-repr []) []))

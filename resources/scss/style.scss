@@ -3,3 +3,12 @@
 .app-container {
   margin: 15px 0;
 }
+
+.todo-editable {
+  padding: 0;
+  input {
+    padding: $list-group-item-padding-y $list-group-item-padding-x;
+    margin: 0;
+    width: 100%;
+  }
+}
