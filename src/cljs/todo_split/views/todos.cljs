@@ -53,10 +53,8 @@
              {:on-click #(rf/dispatch [:move-cursor-to-path path])}))
           (if active?
             [todo-input {:text text
-                         :on-save #(do
-                                     (println "on-save invoked")
-                                     (when (not= (or text "") (or % ""))
-                                       (rf/dispatch [:edit-todo-by-path path %])))
+                         :on-save #(when (not= (or text "") (or % ""))
+                                     (rf/dispatch [:edit-todo-by-path path %]))
                          :on-stop #(do (reset! !editable? false)
                                        (rf/dispatch [:reset-new-todo-id]))}]
             (str text " "))]

@@ -64,23 +64,51 @@
     refactor-nrepl.middleware/wrap-refactor
     cider.nrepl/cider-middleware]}
 
+  :cljsbuild
+  {:builds
+   {:app
+    {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
+     :figwheel {:on-jsload "todo-split.core/start-kf!"}
+     :compiler
+     {:main "todo-split.app"
+      :asset-path "/js/out"
+      :output-to "target/cljsbuild/public/js/app.js"
+      :output-dir "target/cljsbuild/public/js/out"
+      :source-map true
+      :optimizations :none
+      :pretty-print true
+      :closure-defines {"re_frame.trace.trace_enabled_QMARK_" true
+                        "day8.re_frame.tracing.trace_enabled_QMARK_" true}
+      :aot-cache true
+      :preloads [day8.re-frame-10x.preload]}}
+    :test
+    {:source-paths ["src/cljc" "src/cljs" "test/cljs"]
+     :compiler
+     {:output-to "target/cljsbuild/public/js/test.js"
+      :output-dir "target/cljsbuild/public/js/test-out"
+      :asset-path "/js/test-out"
+      :main "todo-split.doo-runner"
+      :source-map true
+      :optimizations :none
+      :aot-cache true
+      :pretty-print true}}
+    :min
+    {:source-paths ["src/cljc" "src/cljs" "env/prod/cljs"]
+     :compiler
+     {:output-dir "target/cljsbuild/public/js"
+      :output-to "target/cljsbuild/public/js/app.js"
+      :source-map "target/cljsbuild/public/js/app.js.map"
+      :optimizations :advanced
+      :aot-cache true
+      :pretty-print false
+      :closure-warnings
+      {:externs-validation :off :non-standard-jsdoc :off}
+      :externs ["react/externs/react.js"]}}}}
+
   :profiles
   {:uberjar {:omit-source true
              :prep-tasks ["compile" ["cljsbuild" "once" "min"]]
-             :cljsbuild
-             {:builds
-              {:min
-               {:source-paths ["src/cljc" "src/cljs" "env/prod/cljs"]
-                :compiler
-                {:output-dir "target/cljsbuild/public/js"
-                 :output-to "target/cljsbuild/public/js/app.js"
-                 :source-map "target/cljsbuild/public/js/app.js.map"
-                 :optimizations :advanced
-                 :aot-cache true
-                 :pretty-print false
-                 :closure-warnings
-                 {:externs-validation :off :non-standard-jsdoc :off}
-                 :externs ["react/externs/react.js"]}}}}
+             :dependencies [[day8.re-frame/tracing-stubs "0.5.1"]]
              :aot :all
              :uberjar-name "todo-split.jar"
              :source-paths ["env/prod/clj"]
@@ -105,22 +133,6 @@
                                  [lein-doo "0.1.8"]
                                  [lein-figwheel "0.5.16-SNAPSHOT"]
                                  [org.clojure/clojurescript "1.10.238"]]
-                  :cljsbuild
-                  {:builds
-                   {:app
-                    {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-                     :figwheel {:on-jsload "todo-split.core/start-kf!"}
-                     :compiler
-                     {:main "todo-split.app"
-                      :asset-path "/js/out"
-                      :output-to "target/cljsbuild/public/js/app.js"
-                      :output-dir "target/cljsbuild/public/js/out"
-                      :source-map true
-                      :optimizations :none
-                      :pretty-print true
-                      :closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}
-                      :aot-cache true
-                      :preloads [day8.re-frame-10x.preload]}}}}
                   :doo {:build "test"}
                   :source-paths ["env/dev/clj"]
                   :resource-paths ["env/dev/resources"]
@@ -128,16 +140,6 @@
                   :injections [(require 'pjstadig.humane-test-output)
                                (pjstadig.humane-test-output/activate!)]}
    :project/test {:jvm-opts ["-server" "-Dconf=test-config.edn"]
-                  :resource-paths ["env/test/resources"]
-                  :cljsbuild
-                  {:builds
-                   {:test
-                    {:source-paths ["src/cljc" "src/cljs" "test/cljs"]
-                     :compiler
-                     {:output-to "target/test.js"
-                      :main "todo-split.doo-runner"
-                      :optimizations :whitespace
-                      :aot-cache true
-                      :pretty-print true}}}}}
+                  :resource-paths ["env/test/resources"]}
    :profiles/dev {}
    :profiles/test {}})

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% style "/assets/font-awesome/web-fonts-with-css/css/fontawesome-all.min.css" %}
+    {% style "/css/styles.min.css" %}
+    <link id="favicon" rel="shortcut icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4T2NMS0v7z0ABYBw1gGE0DBhGwwCYh4ZBOgAAcQUjIUXh8RYAAAAASUVORK5CYII=" />
+  </head>
+  <body>
+    <!-- scripts and styles -->
+    {% script "/js/scripts.min.js" %}
+    {% script "/assets/font-awesome/svg-with-js/js/fontawesome.min.js" %}
+    {% script "/assets/tether/dist/js/tether.min.js" %}
+    <script type="text/javascript">
+        var context = "{{servlet-context}}";
+        var csrfToken = "{{csrf-token}}";
+    </script>
+    {% script "/js/test.js" %}
+  </body>
+</html>
