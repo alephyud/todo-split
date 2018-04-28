@@ -71,7 +71,7 @@
                  "/info" :info
                  "/about" :about}])
 
-(reg-controller :my-controller
+#_(reg-controller :my-controller
                 {:params (fn [{:keys [handler route-params]}]
                            (println handler route-params))
                  :start (fn [& args] (println args))})
@@ -95,7 +95,7 @@
 (defn start-kf! []
   (kf/start! {:routes routes
               :app-db-spec ::db/db
-              :initial-db (gen/generate (s/gen ::db/db))
+              :initial-db #_db/default-db (gen/generate (s/gen ::db/db))
               :debug? true
               :root-component [page]}))
 

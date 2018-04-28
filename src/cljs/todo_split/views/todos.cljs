@@ -37,36 +37,41 @@
 
 (declare todolist)
 
-(defn todo-widget [index {:keys [::todos/uuid] :as todo-item}]
+(defn todo-widget [path {:keys [::todos/uuid] :as todo-item}]
   (let [!editable? (r/atom (= uuid @(rf/subscribe [:new-todo-id])))]
-    (fn [index {:keys [::todos/uuid ::todos/text ::todos/subtasks]}]
-      (let [active? (= index @(rf/subscribe [:active-todo-index]))]
-        [:li.list-group-item
-         (if active?
-           {:class "todo-editable"}
-           {:on-click #(rf/dispatch [:move-cursor-to-index index])})
-         (if active?
-           [todo-input {:text text
-                        :on-save #(when (not= (or text "") (or % ""))
-                                    (rf/dispatch
-                                     (if uuid
-                                       [:change-text uuid %]
-                                       [:add-todo {::todos/uuid (random-uuid)
-                                                   ::todos/text %}])))
-                        :on-stop #(do (reset! !editable? false)
-                                      (rf/dispatch [:reset-new-todo-id]))}]
-           (str text " "))
-         (when (seq subtasks)
-           [todolist (r/atom subtasks) (r/atom -1)])]))))
+    (fn todo-widget-inner
+      [path {:keys [::todos/uuid ::todos/text ::todos/subtasks] :as todo-item}]
+      (let [active-path @(rf/subscribe [:active-todo-path])
+            active? (= path active-path)]
+        [:div
+         [:div.list-group-item
+          (merge
+           {:style {:margin-left (* (count path) 20)
+                    :background-color (when (nil? todo-item) "#fdd")}}
+           (if active?
+             {:class "todo-editable"}
+             {:on-click #(rf/dispatch [:move-cursor-to-path path])}))
+          (if active?
+            [todo-input {:text text
+                         :on-save #(do
+                                     (println "on-save invoked")
+                                     (when (not= (or text "") (or % ""))
+                                       (rf/dispatch [:edit-todo-by-path path %])))
+                         :on-stop #(do (reset! !editable? false)
+                                       (rf/dispatch [:reset-new-todo-id]))}]
+            (str text " "))]
+         (when (or subtasks (= active-path (conj path 0)))
+           (todolist path subtasks))]))))
 
-(defn todolist [!items !active-index]
-  (let [num-items (count @!items)]
-    [:ul.list-group
-     (for [[index todo-item] (map-indexed vector @!items)]
-       ^{:key index} [todo-widget index todo-item])
-     (when (>= @!active-index num-items)
-       ^{:key num-items} [todo-widget num-items nil])]))
+(defn todolist [path items]
+  (let [active-path @(rf/subscribe [:active-todo-path])
+        num-items (count items)]
+    [:div.list-group
+     (for [[index todo-item] (map-indexed vector items)]
+       ^{:key index} [todo-widget (conj path index) todo-item])
+     (when (= active-path (conj path num-items))
+       [todo-widget (conj path num-items) nil])]))
 
 (defn todos-page []
   [:div.container.app-container
-   [todolist (rf/subscribe [:todos]) (rf/subscribe [:active-todo-index])]])
+   [todolist [] @(rf/subscribe [:todos])]])

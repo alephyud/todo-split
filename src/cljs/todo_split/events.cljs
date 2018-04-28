@@ -4,6 +4,7 @@
             [re-frame.core :as rf :refer [dispatch reg-sub]]
             [re-frame.std-interceptors :refer [path]]
             [kee-frame.core :as kf :refer [reg-event-db reg-event-fx]]
+            [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]
             [todo-split.models.todos :as todos]))
 
 ;;;; Dispatchers
@@ -32,27 +33,12 @@
  (fn [coeffects _]
    (assoc coeffects :new-uuid (random-uuid))))
 
-(reg-event-db
- :add-todo
- (fn [db [todo]]
-   (-> db
-       (update ::db/todos conj todo)
-       (assoc ::db/new-todo-id (::todos/uuid todo)))))
-
-(reg-event-db
- :change-text
- [(path [::db/todos])]
- (fn [todos [uuid text]]
-   (specter/setval [(specter/filterer ::todos/uuid (specter/pred= uuid))
-                    specter/FIRST ::todos/text] text todos)))
-
 (reg-event-fx
- :edit-todo-by-position
+ :edit-todo-by-path
  [(rf/inject-cofx :new-uuid) (path [::db/todos])]
- (fn [{todos :db new-uuid :new-uuid} [position text]]
-   {:db (if (< position (count todos))
-          (assoc-in todos [position ::todos/text] text)
-          (assoc todos position {::todos/uuid new-uuid ::todos/text text}))}))
+ (fn edit-todo-by-path [{todos :db new-uuid :new-uuid} [path text]]
+   {:db (update-in todos (interpose ::todos/subtasks path)
+                   #(merge {::todos/uuid new-uuid} % {::todos/text text}))}))
 
 (reg-event-db
  :reset-new-todo-id
@@ -60,29 +46,65 @@
    (dissoc db ::db/new-todo-id)))
 
 (reg-event-db
- :move-cursor-to-index
- [(path ::db/active-todo-index)]
- (fn [_ [index]] index))
+ :move-cursor-to-path
+ [(path ::db/active-todo-path)]
+ (fn-traced [_ [index]] index))
 
 (reg-event-db
+ ;; TO BE REWRITTEN
  :move-cursor-to-uuid
- (fn [{:keys [::db/todos] :as db} [target-uuid]]
+ (fn-traced [{:keys [::db/todos] :as db} [target-uuid]]
    (let [result (ffirst (filter #(= target-uuid (::todos/uuid (second %)))
                                 (map-indexed vector todos)))]
      (if (nil? result)
        (throw (str "To-do item with UUID " target-uuid " not found")))
      (assoc db ::db/active-todo-index result))))
 
-(reg-event-db
- :move-cursor-down
- (fn [{:keys [::db/active-todo-index ::db/todos] :as db} _]
-   (let [n (count todos)]
-     (assoc db ::db/active-todo-index (min n (inc active-todo-index))))))
+(defn-traced get-by-path [todos path]
+  (get-in todos (interpose ::todos/subtasks path)))
+
+(defn-traced last-child-path [{:keys [::todos/subtasks]} path]
+  (if (empty? subtasks)
+    path
+    (last-child-path (peek subtasks) (conj path (dec (count subtasks))))))
+
+(defn-traced traverse-up [todos path]
+  (cond
+    (= path [0]) path
+    (= (peek path) 0) (subvec path 0 (dec (count path)))
+    :else (let [path-len (count path)
+                dec-path (update path (dec path-len) dec)]
+            (last-child-path (get-by-path todos dec-path) dec-path))))
+
+(defn traverse-down [todos path create-new?]
+  (let [new-item-adjustment (if create-new? 1 0)
+        [subtask-counts inner-subtasks]
+        (reduce (fn [[acc todos] index]
+                  [(conj acc (+ (count todos) new-item-adjustment))
+                   (get-in todos [index ::todos/subtasks])])
+                [[] todos] path)]
+    (if (and (some? inner-subtasks)
+             (pos? (+ (count inner-subtasks) new-item-adjustment)))
+      (conj path 0)
+      (loop [depth (dec (count path))
+             new-path path]
+        (cond
+          (neg? depth) path
+          (< (inc (get new-path depth))
+             (get subtask-counts depth)) (update new-path depth inc)
+          :else (recur (dec depth) (subvec new-path 0 depth)))))))
 
 (reg-event-db
  :move-cursor-up
- (fn [{:keys [::db/active-todo-index ::db/todos] :as db} _]
-   (assoc db ::db/active-todo-index (max 0 (dec active-todo-index)))))
+ (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
+   (assoc db ::db/active-todo-path (traverse-up todos active-todo-path))))
+
+(reg-event-db
+ :move-cursor-down
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
+   (let [n (count todos)]
+     (assoc db ::db/active-todo-path
+            (traverse-down todos active-todo-path true)))))
 
 ;;;; Subscriptions
 
@@ -96,4 +118,4 @@
 
 (reg-sub :new-todo-id ::db/new-todo-id)
 
-(reg-sub :active-todo-index ::db/active-todo-index)
+(reg-sub :active-todo-path ::db/active-todo-path)
