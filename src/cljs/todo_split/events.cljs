@@ -33,12 +33,21 @@
  (fn [coeffects _]
    (assoc coeffects :new-uuid (random-uuid))))
 
+(defn-traced edit-todo-by-path
+  [{todos :db :keys [new-uuid] :as cofx} [[index & rest-path] text]]
+  (if (empty? rest-path)
+    (update (or todos []) index
+            #(merge {::todos/uuid new-uuid} % {::todos/text text}))
+    (assoc-in todos [index ::todos/subtasks]
+              (edit-todo-by-path
+               (update cofx :db get-in [index ::todos/subtasks])
+               [rest-path text]))))
+
 (reg-event-fx
  :edit-todo-by-path
  [(rf/inject-cofx :new-uuid) (path [::db/todos])]
- (fn-traced edit-todo-by-path [{todos :db new-uuid :new-uuid} [path text]]
-   {:db (update-in todos (interpose ::todos/subtasks path)
-                   #(merge {::todos/uuid new-uuid} % {::todos/text text}))}))
+ (fn-traced [cofx params]
+   {:db (edit-todo-by-path cofx params)}))
 
 (reg-event-db
  :reset-new-todo-id
@@ -67,7 +76,7 @@
 
 (reg-event-db
  :move-cursor-down
- (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
+ (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
             (todos/traverse-down todos active-todo-path true)))))

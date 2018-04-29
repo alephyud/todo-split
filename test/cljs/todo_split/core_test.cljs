@@ -2,7 +2,8 @@
   (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
             [pjstadig.humane-test-output]
             [reagent.core :as reagent :refer [atom]]
-            [todo-split.models.todos :as todos]))
+            [todo-split.models.todos :as todos]
+            [todo-split.events :as events]))
 
 (deftest wtf-test
   (is (= 1 1)))
@@ -56,3 +57,13 @@
     (is (= [4 1 0] (todos/traverse-down sample-todos [4 1] true)))
     (is (= [4 2 0] (todos/traverse-down sample-todos [4 2] true)))
     (is (= [4 3 0] (todos/traverse-down sample-todos [4 3] true)))))
+
+(deftest adding-and-editing
+  (testing "Editing existing items"
+    (is (= "New text" (-> {:db sample-todos}
+                          (events/edit-todo-by-path [[0] "New text"])
+                          first ::todos/text))))
+  (testing "Adding new items"
+    (is (= "New text" (-> {:db sample-todos :new-uuid (uuid "1")}
+                          (events/edit-todo-by-path [[0 0] "New text"])
+                          first ::todos/subtasks first ::todos/text)))))
