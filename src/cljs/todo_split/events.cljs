@@ -26,6 +26,16 @@
  (fn [db [_ docs]]
    (assoc db :docs docs)))
 
+(rf/reg-cofx
+ :random-db
+ (fn [coeffects _]
+   (assoc coeffects :random-db (db/generate-random-db))))
+
+(reg-event-fx
+ :generate-random-db
+ [(rf/inject-cofx :random-db)]
+ (fn [{:keys [random-db]} _] {:db random-db}))
+
 ;; Todo-related
 
 (rf/reg-cofx
@@ -105,7 +115,7 @@
  (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
-            (todos/traverse-down todos active-todo-path true)))))
+            (todos/traverse-down todos active-todo-path false)))))
 
 ;;;; Subscriptions
 

@@ -16,6 +16,19 @@ To start a web server for the application, run:
 
     lein run 
 
+To start a development Figwheel server for the application, run:
+
+    lein figwheel
+    
+After that, open `http://localhost:3000` for the application and
+`http://localhost:3000/test` for frontend test.
+
+## To-do list :)
+
+* Editing and selecting states (like in Jupyter)
+* Marking tasks as done
+* Splitting tasks
+
 ## License
 
 Copyright © 2018 FIXME

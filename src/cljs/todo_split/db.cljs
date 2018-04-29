@@ -23,3 +23,6 @@
   (s/and (s/keys :req [::todos ::page ::active-todo-path]
                  :opt [::new-todo-id])
          #(valid-path? (::todos %) (::active-todo-path %))))
+
+(defn generate-random-db []
+  (gen/generate (s/gen ::db)))

@@ -46,7 +46,6 @@
            (reset! !external-update? false)))
       :reagent-render
       (fn [props]
-        (println "render")
         [:input.form-control
          (merge (dissoc props :on-save :on-stop :text)
                 {:type        "text"
@@ -102,4 +101,8 @@
 
 (defn todos-page []
   [:div.container.app-container
+   [:div.mb-1
+    [:button.btn.btn-default
+     {:on-click #(rf/dispatch [:generate-random-db])}
+     "Generate random list of tasks"]]
    [todolist [] @(rf/subscribe [:todos])]])

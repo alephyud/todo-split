@@ -1,10 +1,11 @@
 (ns todo-split.models.todos
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
+            [todo-split.models.todos.gen :as todos.gen]
             [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]))
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
-(s/def ::text string?)
+(s/def ::text (s/spec string? :gen (fn [] todos.gen/task)))
 
 (s/def ::task
   (s/keys :req [::uuid ::text]
@@ -15,8 +16,8 @@
 (s/def ::flat-task
   (s/keys :req [::uuid ::text ::indent]))
 
-(s/def ::todolist (s/coll-of ::task :gen-max 5))
-(s/def ::subtasks ::todolist)
+(s/def ::todolist (s/coll-of ::task :gen-max 10))
+(s/def ::subtasks (s/coll-of ::task :gen-max 0))
 
 (defn-traced flat-repr
   ([todolist] (flat-repr todolist 0))

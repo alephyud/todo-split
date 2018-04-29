@@ -1,8 +1,6 @@
 (ns todo-split.core
   (:require [reagent.core :as r]
             [clojure.string :as cs]
-            [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as gen]
             [clojure.test.check.generators]
             [re-frame.core :as rf]
             [secretary.core :as secretary]
@@ -95,7 +93,7 @@
 (defn start-kf! []
   (kf/start! {:routes routes
               :app-db-spec ::db/db
-              :initial-db #_db/default-db (gen/generate (s/gen ::db/db))
+              :initial-db db/default-db
               :debug? true
               :root-component [page]}))
 
