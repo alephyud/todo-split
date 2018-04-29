@@ -27,13 +27,23 @@
            (.setSelectionRange 0 (.. input -value -length))))
       :reagent-render
       (fn [props]
-        [:input.form-group
+        [:input.form-control
          (merge (dissoc props :on-save :on-stop :text)
                 {:type        "text"
                  :value       @!val
                  :on-blur     save
                  :on-change   #(reset! !val (-> % .-target .-value))
                  :on-key-down key-handler})])})))
+
+(defn to-rgb [{:keys [red green blue]}]
+  (let [hex #(str (if (< % 16) "0")
+                  (-> % js/Math.round (.toString 16)))]
+    (str "#" (hex red) (hex green) (hex blue))))
+
+(defn selected-shade [intensity]
+  (to-rgb {:red   (- 255 (* intensity 30))
+           :green (- 255 (* intensity 30))
+           :blue  255}))
 
 (declare todolist)
 
@@ -42,15 +52,14 @@
     (fn todo-widget-inner
       [path {:keys [::todos/uuid ::todos/text ::todos/subtasks] :as todo-item}]
       (let [active-path @(rf/subscribe [:active-todo-path])
-            active? (= path active-path)]
-        [:div
-         [:div.list-group-item
-          (merge
-           {:style {:margin-left (* (count path) 20)
-                    :background-color (when (nil? todo-item) "#fdd")}}
-           (if active?
-             {:class "todo-editable"}
-             {:on-click #(rf/dispatch [:move-cursor-to-path path])}))
+            active? (= path active-path)
+            depth (count (take-while identity (map = path active-path)))]
+        [:div.todo-wrapper
+         {:style {:background-color (when (pos? depth) (selected-shade depth))}}
+         [:div.todo-list-item
+          (if active?
+            {:class "todo-editable"}
+            {:on-click #(rf/dispatch [:move-cursor-to-path path])})
           (if active?
             [todo-input {:text text
                          :on-save #(when (not= (or text "") (or % ""))
@@ -59,12 +68,13 @@
                                        (rf/dispatch [:reset-new-todo-id]))}]
             (str text " "))]
          (when (or subtasks (= active-path (conj path 0)))
-           (todolist path subtasks))]))))
+           [:div {:style {:margin-left 20}}
+            (todolist path subtasks)])]))))
 
 (defn todolist [path items]
   (let [active-path @(rf/subscribe [:active-todo-path])
         num-items (count items)]
-    [:div.list-group
+    [:div
      (for [[index todo-item] (map-indexed vector items)]
        ^{:key index} [todo-widget (conj path index) todo-item])
      (when (= active-path (conj path num-items))
