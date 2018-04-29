@@ -58,7 +58,7 @@
     (is (= [4 2 0] (todos/traverse-down sample-todos [4 2] true)))
     (is (= [4 3 0] (todos/traverse-down sample-todos [4 3] true)))))
 
-(deftest adding-and-editing
+(deftest todos-adding-and-editing
   (testing "Editing existing items"
     (is (= "New text" (-> {:db sample-todos}
                           (events/edit-todo-by-path [[0] "New text"])
@@ -67,3 +67,14 @@
     (is (= "New text" (-> {:db sample-todos :new-uuid (uuid "1")}
                           (events/edit-todo-by-path [[0 0] "New text"])
                           first ::todos/subtasks first ::todos/text)))))
+
+(deftest todos-cutting
+  (is (= (subvec sample-todos 1)
+         (first (events/cut-todos sample-todos [[0]]))))
+  (is (= (into (subvec sample-todos 0 1) (subvec sample-todos 2))
+         (first (events/cut-todos sample-todos [[1]]))))
+  (is (= (let [key-path [4 ::todos/subtasks]
+               subtasks (get-in sample-todos key-path)]
+           (assoc-in sample-todos key-path
+                     (into (subvec subtasks 0 1) (subvec subtasks 2))))
+         (first (events/cut-todos sample-todos [[4 1]])))))

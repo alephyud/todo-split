@@ -34,6 +34,7 @@
    (assoc coeffects :new-uuid (random-uuid))))
 
 (defn-traced edit-todo-by-path
+  "Replaces the text using the selected index path"
   [{todos :db :keys [new-uuid] :as cofx} [[index & rest-path] text]]
   (if (empty? rest-path)
     (update (or todos []) index
@@ -43,11 +44,36 @@
                (update cofx :db get-in [index ::todos/subtasks])
                [rest-path text]))))
 
+(defn-traced cut-todos
+  "Takes a todo list and a path of indices (which may end in a range of two
+   indices or a single number). Cuts out the todos designated by the path and
+   returns a vector of:
+    - the todo list from which the selected todos are cut, and
+    - the todos that were cut out."
+  [todos [[index & rest-path]]]
+  (if (empty? rest-path)
+    (let [[start end] (if (seq? index) index [index index])]
+      [(into (subvec todos 0 start) (subvec todos (inc end)))
+       (subvec todos start (inc end))])
+    (let [key-path [index ::todos/subtasks]
+          [remaining removed] (cut-todos (get-in todos key-path) [rest-path])]
+      [(assoc-in todos key-path remaining) removed])))
+
 (reg-event-fx
  :edit-todo-by-path
  [(rf/inject-cofx :new-uuid) (path [::db/todos])]
  (fn-traced [cofx params]
    {:db (edit-todo-by-path cofx params)}))
+
+(reg-event-db
+ :cut-todos
+ (fn [db params]
+   (update db ::db/todos #(first (cut-todos % params)))))
+
+(reg-event-fx
+ :cut-active-todo
+ (fn [{{:keys [::db/active-todo-path]} :db} _]
+   {:dispatch [:cut-todos active-todo-path]}))
 
 (reg-event-db
  :reset-new-todo-id

@@ -7,26 +7,46 @@
             [todo-split.db :as db])
   (:import [goog.events KeyCodes]))
 
+(defn select-all [input-element]
+  (.setSelectionRange input-element 0 (.. input-element -value -length)))
+
+(defn key-handler [{:keys [save stop]} event]
+  (if (and (.-ctrlKey event) (.-shiftKey event))
+    (condp = (.-which event)
+      KeyCodes.BACKSPACE (do (rf/dispatch [:cut-active-todo])
+                             (.preventDefault event))
+      nil)
+    (condp = (.-which event)
+      KeyCodes.ENTER (do (save) (rf/dispatch [:move-cursor-down]))
+      KeyCodes.ESC (stop)
+      KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
+      KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
+      nil)))
+
 (defn todo-input [{:keys [text on-save on-stop]}]
   (let [!val (r/atom text)
-        stop #(do (reset! !val text)
-                  (when on-stop (on-stop)))
-        save #(let [v (-> @!val str cs/trim)]
-                (on-save v))
-        key-handler #(condp = (.-which %)
-                       KeyCodes.ENTER (do (save) (rf/dispatch [:move-cursor-down]))
-                       KeyCodes.ESC (stop)
-                       KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
-                       KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
-                       nil)]
+        !external-update? (r/atom false)
+        stop #(do (reset! !val text) (when on-stop (on-stop)))
+        save #(let [v (-> @!val str cs/trim)] (on-save v))
+        key-handler (partial key-handler {:stop stop :save save})]
     (r/create-class
      {:component-did-mount                                               
       #(let [input (r/dom-node %)]                                       
-         (doto input                                                      
-           (.focus)                                                       
-           (.setSelectionRange 0 (.. input -value -length))))
+         (.focus input)
+         (select-all input))
+      :component-will-receive-props
+      (fn [this [_ {:keys [text]}]]
+        (when-not (= text @!val)
+          (reset! !val text)
+          (reset! !external-update? true)))
+      :component-did-update                                               
+      #(let [input (r/dom-node %)]
+         (when @!external-update?
+           (select-all input)
+           (reset! !external-update? false)))
       :reagent-render
       (fn [props]
+        (println "render")
         [:input.form-control
          (merge (dissoc props :on-save :on-stop :text)
                 {:type        "text"
