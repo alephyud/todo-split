@@ -3,17 +3,29 @@
             [clojure.spec.gen.alpha :as gen]
             [clojure.string :as cs]))
 
+(defn join-str-gen [seq-spec]
+  (fn [] (gen/fmap (partial cs/join " ") (s/gen seq-spec))))
+
+(defn one-or-two [base-spec]
+  (s/or :one base-spec
+        :two (s/spec string? :gen (join-str-gen
+                                   (s/and (s/cat :first base-spec
+                                                 :and #{"and"}
+                                                 :second base-spec)
+                                          (s/coll-of any? :distinct true))))))
+
 (s/def ::contact
-  #{"Alex" "Bob" "Chelsea" "Daphna" "Erica" "Farhad" "Gene" "Harriet"
-    "Ian" "Jane" "support team" "IT" "the client" "Goldstein" "Morgan" "Google"
-    "Buzzfeed" "White&Case" "HR" "BoD" "CEO" "CFO" "COO" "IRS"
+  #{"Alex" "Bob" "Chelsea" "Daphna" "Erica" "Farhad" "Gene" "Hans"
+    "Ian" "Jane" "support team" "IT" "the client" "Reuters" "Citi" "Google"
+    "Buzzfeed" "White&Case" "HR" "BoD" "CEO" "CFO" "COO" "IRS" "Amazon"
     "lawyers" "consultant" "E&Y" "PWC" "McKinsey team" "service center"
-    "QA team" "designer" "PR team" "devs" "product manager"})
+    "QA team" "designer" "PR team" "devs" "product manager" "manufacturer"
+    "distributor" "frontend team" "help desk"})
 
 (s/def ::simple-product
   #{"list of invitees" "project budget" "project plan" "investment memorandum"
     "investor presentation" "business plan" "marketing materials" "NDA"
-    "RfP" "the proposal" "market overview" "speaker notes"
+    "RfP" "the proposal" "market overview" "speaker notes" "teaser"
     "talking points" "tech specs" "ToU" "privacy policy" "executive summary"
     "product description" "mission statement" "introductory video"
     "kick-off presentation" "the white paper" "restaurant menu" "job description"
@@ -22,18 +34,19 @@
     "compliance statement" "press release" "pitchbook" "PR kit" "post-mortem"
     "IFRS accounts" "costs breakdown" "revenue charts" "electricity bills"
     "product portfolio" "reserves report" "development schedule" "tax returns"
-    "presentation outline" "launch announcement"})
+    "presentation outline" "launch announcement" "logo" "corporate slogan"
+    "purchase agreement" "long-term agreement" "service agreement" "mandate"
+    "stock quotes" "incentive program" "termination notice" "media kit"
+    "layoff plan" "Chapter 7 filing" "Chapter 11 filing"
+    "value proposition" "go-to-market strategy" "patient records"})
 
 (s/def ::period
   #{"hourly" "daily" "weekly" "biweekly" "monthly" "quarterly" "half-year"
     "yearly" "annual"})
 
 (s/def ::periodic-product-name
-  #{"budget" "plan" "schedule" "report" "financials" "update"
+  #{"budget" "plan" "schedule" "report" "financials" "update" "drilling update"
     "sales update" "development update" "management accounts"})
-
-(defn join-str-gen [seq-spec]
-  (fn [] (gen/fmap (partial cs/join " ") (s/gen seq-spec))))
 
 (s/def ::periodic-product
   (s/spec string? :gen (join-str-gen (s/cat :period ::period
@@ -43,18 +56,27 @@
   (s/or :simple ::simple-product
         :periodic ::periodic-product))
 
-(s/def ::two-products
-  (s/spec string? :gen (join-str-gen
-                        (s/and (s/cat :product-1 ::product
-                                      :and #{"and"}
-                                      :product-2 ::product)
-                               (s/coll-of any? :distinct true)))))
+(s/def ::location
+  #{"Atlanta" "Bahrain" "Chennai" "Dubai" "Exeter" "Fargo" "Geneva"
+    "Haifa" "Ibiza" "Jakarta" "Kinshasa" "Lagos" "Macau" "Norilsk" "Oslo"
+    "Perth" "Qingdao" "Rio" "Seoul" "Tokyo" "Utrecht" "Vancouver" "Xinjiang"
+    "Yerevan" "Zaragoza"})
 
-(s/def ::products
-  (s/or :one ::product :two ::two-products))
+(s/def ::products (one-or-two ::product))
+
+(s/def ::locations (one-or-two ::location))
+
+(s/def ::contacts (one-or-two ::contact))
+
+(s/def ::location-resource
+  (s/spec string? :gen (join-str-gen (s/cat :resource #{"tickets to"
+                                                        "meeting room in"
+                                                        "meetings in"}
+                                            :location ::locations))))
 
 (s/def ::appointment-resource
-  #{"meeting room" "conference room" "dial-in number" "plane tickets"})
+  (s/or :static-resource #{"conference room" "dial-in number" "call details"}
+        :location-resource ::location-resource))
 
 (s/def ::contact-about-action
   #{"Remind" "Ask" "Talk to" "Reply to"})
@@ -68,13 +90,14 @@
 
 (s/def ::product-action
   #{"Design" "Prepare" "Draft" "Send out" "Proofread" "Check" "Finalize"
-    "Comment on" "Update" "Upload" "Download" "Rehearse" "Present"})
+    "Double-check" "Comment on" "Update" "Upload" "Download" "Rehearse"
+    "Present"})
 
 (s/def ::appointment-action
-  #{"Book" "Check"})
+  #{"Book" "Follow up re:"})
 
 (s/def ::task-seq
-  (s/or :contact (s/cat :action ::simple-contact-action :recipient ::contact)
+  (s/or :contact (s/cat :action ::simple-contact-action :recipient ::contacts)
         :contact-about (s/cat :action ::contact-about-action
                               :recipient ::contact
                               :about #{"re:" "about"}

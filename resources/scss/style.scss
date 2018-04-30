@@ -11,15 +11,19 @@
 
 .todo-list-item {
   position: relative;
-  display: block;
+  width: 100%;
   padding: 0.75rem 1.25rem;
   border-width: 1px;
   border-style: solid;
   border-color: rgba(0, 0, 0, 0.125);
   border-image: initial;
   border-radius: 0.25rem;
-  i:hover {
-    cursor: pointer;
+  i {
+    float: left;
+    line-height: 150%;
+    &:hover {
+      cursor: pointer;
+    }
   }
 }
 
@@ -33,8 +37,16 @@
 
 .todo-editable {
   padding: 0;
-  input {
+  position: relative;
+  i {
+    position: absolute;
     padding: $list-group-item-padding-y $list-group-item-padding-x;
+    top: 0;
+    left: 0;
+  }
+  input {
+    padding: $list-group-item-padding-y $list-group-item-padding-x
+             $list-group-item-padding-y 2.3rem;
     border-radius: 0.25rem;
     background-color: #eef;
     margin: 0;

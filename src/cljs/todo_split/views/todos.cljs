@@ -121,7 +121,7 @@
                                  (rf/dispatch
                                   [:edit-todo-by-path path {:text %}]))
                      :on-stop #(rf/dispatch [:edit-mode-off])}]
-        (str text " "))]
+        [:div.todo-text (str text " ")])]
      (when (or subtasks (= active-path (conj path 0)))
        [:div {:style {:margin-left 20}}
         (todolist path subtasks)])]))
