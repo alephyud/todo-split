@@ -6,7 +6,7 @@
 (s/def ::contact
   #{"Alex" "Bob" "Chelsea" "Daphna" "Erica" "Farhad" "Gene" "Harriet"
     "Ian" "Jane" "support team" "IT" "the client" "Goldstein" "Morgan" "Google"
-    "Buzzfeed" "White&Case"
+    "Buzzfeed" "White&Case" "HR" "BoD" "CEO" "CFO" "COO" "IRS"
     "lawyers" "consultant" "E&Y" "PWC" "McKinsey team" "service center"
     "QA team" "designer" "PR team" "devs" "product manager"})
 
@@ -20,14 +20,17 @@
     "meeting agenda" "meeting minutes" "call agenda" "call minutes"
     "financial model" "patent application" "compliance policy"
     "compliance statement" "press release" "pitchbook" "PR kit" "post-mortem"
-    "IFRS accounts" "costs breakdown" "revenue charts" "electricity bills"})
+    "IFRS accounts" "costs breakdown" "revenue charts" "electricity bills"
+    "product portfolio" "reserves report" "development schedule" "tax returns"
+    "presentation outline" "launch announcement"})
 
 (s/def ::period
   #{"hourly" "daily" "weekly" "biweekly" "monthly" "quarterly" "half-year"
     "yearly" "annual"})
 
 (s/def ::periodic-product-name
-  #{"budget" "plan" "schedule" "report" "financials" "update"})
+  #{"budget" "plan" "schedule" "report" "financials" "update"
+    "sales update" "development update" "management accounts"})
 
 (defn join-str-gen [seq-spec]
   (fn [] (gen/fmap (partial cs/join " ") (s/gen seq-spec))))
@@ -64,7 +67,7 @@
         :simple-contact ::simple-contact-action))
 
 (s/def ::product-action
-  #{"Prepare" "Draft" "Send out" "Proofread" "Check" "Finalize"
+  #{"Design" "Prepare" "Draft" "Send out" "Proofread" "Check" "Finalize"
     "Comment on" "Update" "Upload" "Download" "Rehearse" "Present"})
 
 (s/def ::appointment-action

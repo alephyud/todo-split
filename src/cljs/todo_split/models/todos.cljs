@@ -6,10 +6,11 @@
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
 (s/def ::text (s/spec string? :gen todos.gen/task))
+(s/def ::done? boolean?)
 
 (s/def ::task
   (s/keys :req [::uuid ::text]
-          :opt [::subtasks]))
+          :opt [::subtasks ::done?]))
 
 (s/def ::indent nat-int?)
 

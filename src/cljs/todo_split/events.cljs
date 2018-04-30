@@ -45,14 +45,18 @@
 
 (defn-traced edit-todo-by-path
   "Replaces the text using the selected index path"
-  [{todos :db :keys [new-uuid] :as cofx} [[index & rest-path] text]]
+  [{todos :db :keys [new-uuid] :as cofx}
+   [[index & rest-path] {:keys [text done? toggle-done] :as params}]]
   (if (empty? rest-path)
     (update (or todos []) index
-            #(merge {::todos/uuid new-uuid} % {::todos/text text}))
+            #(merge {::todos/uuid new-uuid} %
+                    (when text {::todos/text text})
+                    (when (some? done?) {::todos/done? done?})
+                    (when toggle-done {::todos/done? (not (::todos/done? %))})))
     (assoc-in todos [index ::todos/subtasks]
               (edit-todo-by-path
                (update cofx :db get-in [index ::todos/subtasks])
-               [rest-path text]))))
+               [rest-path params]))))
 
 (defn-traced cut-todos
   "Takes a todo list and a path of indices (which may end in a range of two
@@ -76,6 +80,13 @@
    {:db (edit-todo-by-path cofx params)}))
 
 (reg-event-db
+ :toggle-active-todo
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
+   (assoc db ::db/todos
+          (edit-todo-by-path {:db todos}
+                             [active-todo-path {:toggle-done true}]))))
+
+(reg-event-db
  :cut-todos
  (fn [db params]
    (update db ::db/todos #(first (cut-todos % params)))))
@@ -83,8 +94,7 @@
 (reg-event-fx
  :cut-active-todo
  (fn [{{:keys [::db/active-todo-path]} :db} _]
-   {:dispatch [:cut-todos active-todo-path]}))
-
+   {:dispatch [:cut-todos active-todo-path]})) 
 (reg-event-db
  :reset-new-todo-id
  (fn [db _]

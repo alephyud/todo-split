@@ -28,6 +28,7 @@
 (defn non-edit-mode-key-handler [event]
   (when-not @(rf/subscribe [:edit-mode?])
     (condp = (.-which event)
+      KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
       KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
       KeyCodes.ENTER (rf/dispatch [:edit-mode-on])
       KeyCodes.UP (rf/dispatch [:move-cursor-up])
@@ -90,8 +91,11 @@
 
 (declare todolist)
 
+(defn progress-icon [percentage])
+
 (defn todo-widget
-  [path {:keys [::todos/uuid ::todos/text ::todos/subtasks] :as todo-item}]
+  [path {:keys [::todos/uuid ::todos/text ::todos/subtasks ::todos/done?]
+         :as todo-item}]
   (let [active-path @(rf/subscribe [:active-todo-path])
         active? (= path active-path)
         editable? (and active? @(rf/subscribe [:edit-mode?]))
@@ -101,14 +105,21 @@
      [:div.todo-list-item
       (if editable?
         {:class "todo-editable"}
-        {:class (when active? "todo-active")
-         :on-click (fn [_]
-                     (rf/dispatch [:move-cursor-to-path path])
-                     (rf/dispatch [:edit-mode-on]))})
+        {:class (->> [(when active? "todo-active")
+                      (when done? "todo-done")]
+                     (keep identity) (cs/join " "))
+         :on-click #(do (rf/dispatch [:move-cursor-to-path path])
+                        (rf/dispatch [:edit-mode-on]))})
+      [:i.mr-1 {:class (if done? "fas fa-check text-success" "far fa-square")
+                :on-click (fn [e]
+                            (rf/dispatch
+                             [:edit-todo-by-path path {:done? (not done?)}])
+                            (.stopPropagation e))}]
       (if editable?
         [todo-input {:text text
                      :on-save #(when (not= (or text "") (or % ""))
-                                 (rf/dispatch [:edit-todo-by-path path %]))
+                                 (rf/dispatch
+                                  [:edit-todo-by-path path {:text %}]))
                      :on-stop #(rf/dispatch [:edit-mode-off])}]
         (str text " "))]
      (when (or subtasks (= active-path (conj path 0)))

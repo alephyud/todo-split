@@ -12,7 +12,8 @@
   [{::todos/uuid (uuid "bb2a02a3-b678-4997-bc49-a5a12c4ac9dc"),
     ::todos/text "NLYJXQI9mZZVxBXLBIQ0Pzk6tEt"}
    {::todos/uuid (uuid "9caa67c5-f31c-4c01-96e4-6264199540b6"),
-    ::todos/text "p1DdP3kC78kn8Oo4QT"}
+    ::todos/text "p1DdP3kC78kn8Oo4QT"
+    ::todos/done? true}
    {::todos/uuid (uuid "1545da52-1e51-4e05-b1f9-c170dcdaf80b"),
     ::todos/text "Yb9Mhq875zE8ncctO90zleULoRWA"}
    {::todos/uuid (uuid "c677ef34-1920-4592-a34f-0914dc841f79"),
@@ -61,11 +62,18 @@
 (deftest todos-adding-and-editing
   (testing "Editing existing items"
     (is (= "New text" (-> {:db sample-todos}
-                          (events/edit-todo-by-path [[0] "New text"])
+                          (events/edit-todo-by-path [[0] {:text "New text"}])
                           first ::todos/text))))
+  (testing "Marking items as done or not done"
+    (is (= true (-> {:db sample-todos}
+                    (events/edit-todo-by-path [[0] {:done? true}])
+                    first ::todos/done?)))
+    (is (= false (-> {:db sample-todos}
+                     (events/edit-todo-by-path [[1] {:done? false}])
+                     second ::todos/done?))))
   (testing "Adding new items"
     (is (= "New text" (-> {:db sample-todos :new-uuid (uuid "1")}
-                          (events/edit-todo-by-path [[0 0] "New text"])
+                          (events/edit-todo-by-path [[0 0] {:text "New text"}])
                           first ::todos/subtasks first ::todos/text)))))
 
 (deftest todos-cutting
