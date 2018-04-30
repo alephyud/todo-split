@@ -117,6 +117,16 @@
      (assoc db ::db/active-todo-path
             (todos/traverse-down todos active-todo-path false)))))
 
+(reg-event-db
+ :edit-mode-on
+ [(path ::db/edit-mode?)]
+ (fn [_ _] true))
+
+(reg-event-db
+ :edit-mode-off
+ [(path ::db/edit-mode?)]
+ (fn [_ _] false))
+
 ;;;; Subscriptions
 
 (reg-sub :page ::db/page)
@@ -124,6 +134,8 @@
 (reg-sub :docs :docs)
 
 (reg-sub :todos ::db/todos)
+
+(reg-sub :edit-mode? ::db/edit-mode?)
 
 (reg-sub :todos-flat (comp todos/flat-repr ::db/todos))
 

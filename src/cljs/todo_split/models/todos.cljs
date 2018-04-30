@@ -5,7 +5,7 @@
             [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]))
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
-(s/def ::text (s/spec string? :gen (fn [] todos.gen/task)))
+(s/def ::text (s/spec string? :gen todos.gen/task))
 
 (s/def ::task
   (s/keys :req [::uuid ::text]
