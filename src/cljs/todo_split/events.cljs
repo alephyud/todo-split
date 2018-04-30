@@ -39,62 +39,44 @@
 ;; Todo-related
 
 (rf/reg-cofx
- :new-uuid
+ :new-uuids
  (fn [coeffects _]
-   (assoc coeffects :new-uuid (random-uuid))))
-
-(defn-traced edit-todo-by-path
-  "Replaces the text using the selected index path"
-  [{todos :db :keys [new-uuid] :as cofx}
-   [[index & rest-path] {:keys [text done? toggle-done] :as params}]]
-  (if (empty? rest-path)
-    (update (or todos []) index
-            #(merge {::todos/uuid new-uuid} %
-                    (when text {::todos/text text})
-                    (when (some? done?) {::todos/done? done?})
-                    (when toggle-done {::todos/done? (not (::todos/done? %))})))
-    (assoc-in todos [index ::todos/subtasks]
-              (edit-todo-by-path
-               (update cofx :db get-in [index ::todos/subtasks])
-               [rest-path params]))))
-
-(defn-traced cut-todos
-  "Takes a todo list and a path of indices (which may end in a range of two
-   indices or a single number). Cuts out the todos designated by the path and
-   returns a vector of:
-    - the todo list from which the selected todos are cut, and
-    - the todos that were cut out."
-  [todos [[index & rest-path]]]
-  (if (empty? rest-path)
-    (let [[start end] (if (seq? index) index [index index])]
-      [(into (subvec todos 0 start) (subvec todos (inc end)))
-       (subvec todos start (inc end))])
-    (let [key-path [index ::todos/subtasks]
-          [remaining removed] (cut-todos (get-in todos key-path) [rest-path])]
-      [(assoc-in todos key-path remaining) removed])))
+   (assoc coeffects :new-uuids (repeatedly 5 random-uuid))))
 
 (reg-event-fx
  :edit-todo-by-path
- [(rf/inject-cofx :new-uuid) (path [::db/todos])]
+ [(rf/inject-cofx :new-uuids) (path [::db/todos])]
  (fn-traced [cofx params]
-   {:db (edit-todo-by-path cofx params)}))
+   {:db (todos/edit-todo-by-path cofx params)}))
 
 (reg-event-db
  :toggle-active-todo
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (assoc db ::db/todos
-          (edit-todo-by-path {:db todos}
-                             [active-todo-path {:toggle-done true}]))))
+          (todos/edit-todo-by-path {:db todos}
+                                   [active-todo-path {:toggle-done true}]))))
 
 (reg-event-db
  :cut-todos
  (fn [db params]
-   (update db ::db/todos #(first (cut-todos % params)))))
+   (update db ::db/todos #(first (todos/cut-todos % params)))))
 
 (reg-event-fx
  :cut-active-todo
  (fn [{{:keys [::db/active-todo-path]} :db} _]
    {:dispatch [:cut-todos active-todo-path]})) 
+
+(reg-event-fx
+ :split-todo
+ [(rf/inject-cofx :new-uuids) (path [::db/todos])]
+ (fn [{:keys [new-uuids] todos :db} [path]]
+   {:db (todos/split-todo todos path new-uuids false)}))
+
+(reg-event-fx
+ :split-active-todo
+ (fn [{{:keys [::db/active-todo-path]} :db} _]
+   {:dispatch [:split-todo active-todo-path]})) 
+
 (reg-event-db
  :reset-new-todo-id
  (fn [db _]
@@ -104,16 +86,6 @@
  :move-cursor-to-path
  [(path ::db/active-todo-path)]
  (fn-traced [_ [index]] index))
-
-(reg-event-db
- ;; TO BE REWRITTEN
- :move-cursor-to-uuid
- (fn-traced [{:keys [::db/todos] :as db} [target-uuid]]
-   (let [result (ffirst (filter #(= target-uuid (::todos/uuid (second %)))
-                                (map-indexed vector todos)))]
-     (if (nil? result)
-       (throw (str "To-do item with UUID " target-uuid " not found")))
-     (assoc db ::db/active-todo-index result))))
 
 (reg-event-db
  :move-cursor-up

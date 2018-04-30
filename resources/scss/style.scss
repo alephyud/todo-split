@@ -19,6 +19,7 @@
   border-image: initial;
   border-radius: 0.25rem;
   i {
+    margin-right: 0.5rem;
     float: left;
     line-height: 150%;
     &:hover {
@@ -46,7 +47,7 @@
   }
   input {
     padding: $list-group-item-padding-y $list-group-item-padding-x
-             $list-group-item-padding-y 2.3rem;
+             $list-group-item-padding-y 2.55rem;
     border-radius: 0.25rem;
     background-color: #eef;
     margin: 0;

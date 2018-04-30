@@ -3,16 +3,19 @@
             [clojure.spec.gen.alpha :as gen]
             [clojure.string :as cs]))
 
+(defn recursive-join [s]
+  (if (seq? s)
+    (cs/join " " (map recursive-join s))
+    s))
+
 (defn join-str-gen [seq-spec]
-  (fn [] (gen/fmap (partial cs/join " ") (s/gen seq-spec))))
+  (fn [] (gen/fmap recursive-join (s/gen seq-spec))))
 
 (defn one-or-two [base-spec]
-  (s/or :one base-spec
-        :two (s/spec string? :gen (join-str-gen
-                                   (s/and (s/cat :first base-spec
-                                                 :and #{"and"}
-                                                 :second base-spec)
-                                          (s/coll-of any? :distinct true))))))
+  (s/spec string? :gen
+          #(gen/fmap (partial cs/join " and ")
+                     (s/gen (s/coll-of base-spec :distinct true
+                                       :min-count 1 :max-count 2)))))
 
 (s/def ::contact
   #{"Alex" "Bob" "Chelsea" "Daphna" "Erica" "Farhad" "Gene" "Hans"
@@ -28,16 +31,16 @@
     "RfP" "the proposal" "market overview" "speaker notes" "teaser"
     "talking points" "tech specs" "ToU" "privacy policy" "executive summary"
     "product description" "mission statement" "introductory video"
-    "kick-off presentation" "the white paper" "restaurant menu" "job description"
+    "kick-off presentation" "the white paper" "job description"
     "meeting agenda" "meeting minutes" "call agenda" "call minutes"
-    "financial model" "patent application" "compliance policy"
+    "financial model" "patent application" "compliance policy" "court filing"
     "compliance statement" "press release" "pitchbook" "PR kit" "post-mortem"
     "IFRS accounts" "costs breakdown" "revenue charts" "electricity bills"
     "product portfolio" "reserves report" "development schedule" "tax returns"
     "presentation outline" "launch announcement" "logo" "corporate slogan"
     "purchase agreement" "long-term agreement" "service agreement" "mandate"
     "stock quotes" "incentive program" "termination notice" "media kit"
-    "layoff plan" "Chapter 7 filing" "Chapter 11 filing"
+    "layoff plan" "Chapter 7 filing" "Chapter 11 filing" "expense report"
     "value proposition" "go-to-market strategy" "patient records"})
 
 (s/def ::period

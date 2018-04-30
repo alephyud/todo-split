@@ -2,8 +2,7 @@
   (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
             [pjstadig.humane-test-output]
             [reagent.core :as reagent :refer [atom]]
-            [todo-split.models.todos :as todos]
-            [todo-split.events :as events]))
+            [todo-split.models.todos :as todos]))
 
 (deftest wtf-test
   (is (= 1 1)))
@@ -62,27 +61,31 @@
 (deftest todos-adding-and-editing
   (testing "Editing existing items"
     (is (= "New text" (-> {:db sample-todos}
-                          (events/edit-todo-by-path [[0] {:text "New text"}])
+                          (todos/edit-todo-by-path [[0] {:text "New text"}])
                           first ::todos/text))))
   (testing "Marking items as done or not done"
     (is (= true (-> {:db sample-todos}
-                    (events/edit-todo-by-path [[0] {:done? true}])
+                    (todos/edit-todo-by-path [[0] {:done? true}])
                     first ::todos/done?)))
     (is (= false (-> {:db sample-todos}
-                     (events/edit-todo-by-path [[1] {:done? false}])
+                     (todos/edit-todo-by-path [[1] {:done? false}])
                      second ::todos/done?))))
   (testing "Adding new items"
     (is (= "New text" (-> {:db sample-todos :new-uuid (uuid "1")}
-                          (events/edit-todo-by-path [[0 0] {:text "New text"}])
+                          (todos/edit-todo-by-path [[0 0] {:text "New text"}])
                           first ::todos/subtasks first ::todos/text)))))
 
 (deftest todos-cutting
   (is (= (subvec sample-todos 1)
-         (first (events/cut-todos sample-todos [[0]]))))
+         (first (todos/cut-todos sample-todos [[0]]))))
   (is (= (into (subvec sample-todos 0 1) (subvec sample-todos 2))
-         (first (events/cut-todos sample-todos [[1]]))))
+         (first (todos/cut-todos sample-todos [[1]]))))
   (is (= (let [key-path [4 ::todos/subtasks]
                subtasks (get-in sample-todos key-path)]
            (assoc-in sample-todos key-path
                      (into (subvec subtasks 0 1) (subvec subtasks 2))))
-         (first (events/cut-todos sample-todos [[4 1]])))))
+         (first (todos/cut-todos sample-todos [[4 1]])))))
+
+(deftest todos-splitting
+  (let [result (todos/split-todo sample-todos [0] nil false)]
+    (is (= 2 (count (::todos/subtasks (first result)))))))

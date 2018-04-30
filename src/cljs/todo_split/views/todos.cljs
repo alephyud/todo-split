@@ -28,8 +28,11 @@
 (defn non-edit-mode-key-handler [event]
   (when-not @(rf/subscribe [:edit-mode?])
     (condp = (.-which event)
+      KeyCodes.G (rf/dispatch [:generate-random-db])
+      KeyCodes.S (rf/dispatch [:split-active-todo])
       KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
       KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
+      KeyCodes.X (rf/dispatch [:cut-active-todo])
       KeyCodes.ENTER (rf/dispatch [:edit-mode-on])
       KeyCodes.UP (rf/dispatch [:move-cursor-up])
       KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
@@ -110,11 +113,11 @@
                      (keep identity) (cs/join " "))
          :on-click #(do (rf/dispatch [:move-cursor-to-path path])
                         (rf/dispatch [:edit-mode-on]))})
-      [:i.mr-1 {:class (if done? "fas fa-check text-success" "far fa-square")
-                :on-click (fn [e]
-                            (rf/dispatch
-                             [:edit-todo-by-path path {:done? (not done?)}])
-                            (.stopPropagation e))}]
+      [:i {:class (if done? "fas fa-check text-success" "far fa-square")
+           :on-click (fn [e]
+                       (rf/dispatch
+                        [:edit-todo-by-path path {:done? (not done?)}])
+                       (.stopPropagation e))}]
       (if editable?
         [todo-input {:text text
                      :on-save #(when (not= (or text "") (or % ""))
@@ -140,7 +143,7 @@
    {:keydown non-edit-mode-key-handler}
    (fn []
      [:div.container.app-container
-      [:div.mb-1
+      #_[:div.mb-1
        [:button.btn.btn-default
         {:on-click #(rf/dispatch [:generate-random-db])}
         "Generate random list of tasks"]]

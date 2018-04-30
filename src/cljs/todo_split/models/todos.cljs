@@ -1,6 +1,7 @@
 (ns todo-split.models.todos
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
+            [clojure.string :as cs]
             [todo-split.models.todos.gen :as todos.gen]
             [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]))
 
@@ -62,3 +63,47 @@
           (< (inc (get new-path depth))
              (get subtask-counts depth)) (update new-path depth inc)
           :else (recur (dec depth) (subvec new-path 0 depth)))))))
+
+(defn-traced edit-todo-by-path
+  "Replaces the text using the selected index path"
+  [{todos :db :keys [new-uuids] :as cofx}
+   [[index & rest-path] {:keys [text done? toggle-done] :as params}]]
+  (if (empty? rest-path)
+    (update (or todos []) index
+            #(merge {::uuid (first new-uuids)} %
+                    (when text {::text text})
+                    (when (some? done?) {::done? done?})
+                    (when toggle-done {::done? (not (::done? %))})))
+    (assoc-in todos [index ::subtasks]
+              (edit-todo-by-path (update cofx :db get-in [index ::subtasks])
+                                 [rest-path params]))))
+
+(defn-traced cut-todos
+  "Takes a todo list and a path of indices (which may end in a range of two
+   indices or a single number). Cuts out the todos designated by the path and
+   returns a vector of:
+    - the todo list from which the selected todos are cut, and
+    - the todos that were cut out."
+  [todos [[index & rest-path]]]
+  (if (empty? rest-path)
+    (let [[start end] (if (seq? index) index [index index])]
+      [(into (subvec todos 0 start) (subvec todos (inc end)))
+       (subvec todos start (inc end))])
+    (let [key-path [index ::subtasks]
+          [remaining removed] (cut-todos (get-in todos key-path) [rest-path])]
+      [(assoc-in todos key-path remaining) removed])))
+
+(defn-traced splittable? [{:keys [::subtasks ::text ::done?]}]
+  (and (not (cs/blank? text)) (empty? subtasks) (not done?)))
+
+(defn-traced split-subtasks [{:keys [::text] :as todo} uuids]
+  (if (splittable? todo)
+    (assoc todo ::subtasks
+           [{::uuid (first uuids)
+             ::text (str "First step to " text)}
+            {::uuid (second uuids)
+             ::text "..."}])
+    todo))
+
+(defn-traced split-todo [todos path uuids inline?]
+  (update-in todos (interpose ::subtasks path) split-subtasks uuids))
