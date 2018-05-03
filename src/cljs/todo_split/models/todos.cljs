@@ -96,14 +96,32 @@
 (defn-traced splittable? [{:keys [::subtasks ::text ::done?]}]
   (and (not (cs/blank? text)) (empty? subtasks) (not done?)))
 
-(defn-traced split-subtasks [{:keys [::text] :as todo} uuids]
-  (if (splittable? todo)
-    (assoc todo ::subtasks
-           [{::uuid (first uuids)
-             ::text (str "First step to " text)}
-            {::uuid (second uuids)
-             ::text "..."}])
-    todo))
+(defn first-step-text [text]
+  (str "First step to " (cs/lower-case (first text)) (subs text 1)))
+
+(defn split-subtasks [{:keys [::text] :as todo} uuids]
+  [{::uuid (first uuids)
+    ::text (first-step-text text)}
+   {::uuid (second uuids)
+    ::text "..."}])
+
+(defn-traced split-hierarchical [todo uuids]
+  (cond-> todo
+    (splittable? todo)
+    (assoc ::subtasks (split-subtasks todo uuids))))
+
+(defn-traced split-inline [todos index uuids]
+  (let [todo (get todos index)]
+    (if (splittable? todo)
+      (into (subvec todos 0 index)
+            (into (split-subtasks todo uuids)
+                  (subvec todos (inc index))))
+      todos)))
 
 (defn-traced split-todo [todos path uuids inline?]
-  (update-in todos (interpose ::subtasks path) split-subtasks uuids))
+  (if inline?
+    (if (= 1 (count path))
+      (split-inline todos (first path) uuids)
+      (let [key-path (mapcat #(list % ::subtasks) path)]
+        (update-in todos key-path split-inline (peek path) uuids)))
+    (update-in todos (interpose ::subtasks path) split-hierarchical uuids)))

@@ -9,7 +9,7 @@
 
 (def sample-todos
   [{::todos/uuid (uuid "bb2a02a3-b678-4997-bc49-a5a12c4ac9dc"),
-    ::todos/text "NLYJXQI9mZZVxBXLBIQ0Pzk6tEt"}
+    ::todos/text "Feed the cat"}
    {::todos/uuid (uuid "9caa67c5-f31c-4c01-96e4-6264199540b6"),
     ::todos/text "p1DdP3kC78kn8Oo4QT"
     ::todos/done? true}
@@ -29,7 +29,7 @@
       ::todos/text "3nD9JRqW70JD3",
       ::todos/subtasks []}
      {::todos/uuid (uuid "fff52503-ff66-4dc5-912a-42a5f6680d11"),
-      ::todos/text "5P2rXwd8H"}
+      ::todos/text "make the slides"}
      {::todos/uuid (uuid "d06715f7-da73-44c1-84a7-e9dedcf5826e"),
       ::todos/text "tmADUe8WbFanapVOi9u2mpe5AJq7"}]}])
 
@@ -87,5 +87,22 @@
          (first (todos/cut-todos sample-todos [[4 1]])))))
 
 (deftest todos-splitting
-  (let [result (todos/split-todo sample-todos [0] nil false)]
-    (is (= 2 (count (::todos/subtasks (first result)))))))
+  (let [uuids [(uuid "1") (uuid "2")]]
+    (testing "Tree splitting"
+      (let [result (todos/split-todo sample-todos [0] uuids false)
+            first-result (-> result first ::todos/subtasks first)]
+        (is (= 2 (count (::todos/subtasks (first result)))))
+        (is (= "First step to feed the cat" (::todos/text first-result)))
+        (is (= (uuid "1") (::todos/uuid first-result)))))
+    (testing "Inline splitting"
+      (let [n (count sample-todos)
+            result (todos/split-todo sample-todos [0] uuids true)]
+        (is (= (inc n) (count result)))
+        (is (= "First step to feed the cat" (-> result first ::todos/text))))
+      (let [n (-> sample-todos (get 4) ::todos/subtasks count)
+            result (todos/split-todo sample-todos [4 2] uuids true)
+            result-branch (-> result (get 4) ::todos/subtasks)
+            first-result (get result-branch 2)]
+        (is (= (inc n) (count result-branch)))
+        (is (= "First step to make the slides" (::todos/text first-result)))
+        (is (= (uuid "1") (::todos/uuid first-result)))))))
