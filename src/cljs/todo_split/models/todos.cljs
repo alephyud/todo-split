@@ -113,15 +113,15 @@
 (defn-traced split-inline [todos index uuids]
   (let [todo (get todos index)]
     (if (splittable? todo)
-      (into (subvec todos 0 index)
-            (into (split-subtasks todo uuids)
-                  (subvec todos (inc index))))
+      (-> (subvec todos 0 index)
+          (into (split-subtasks todo uuids))
+          (into (subvec todos (inc index))))
       todos)))
 
 (defn-traced split-todo [todos path uuids inline?]
   (if inline?
     (if (= 1 (count path))
       (split-inline todos (first path) uuids)
-      (let [key-path (mapcat #(list % ::subtasks) path)]
+      (let [key-path (mapcat #(list % ::subtasks) (butlast path))]
         (update-in todos key-path split-inline (peek path) uuids)))
     (update-in todos (interpose ::subtasks path) split-hierarchical uuids)))

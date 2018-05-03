@@ -41,7 +41,9 @@
     "purchase agreement" "long-term agreement" "service agreement" "mandate"
     "stock quotes" "incentive program" "termination notice" "media kit"
     "layoff plan" "Chapter 7 filing" "Chapter 11 filing" "expense report"
-    "value proposition" "go-to-market strategy" "patient records"})
+    "value proposition" "go-to-market strategy" "patient records"
+    "sales pipeline" "feasibility study" "key action points" "FEED"
+    "risk assessment" "risks report" "onboarding policy"})
 
 (s/def ::period
   #{"hourly" "daily" "weekly" "biweekly" "monthly" "quarterly" "half-year"

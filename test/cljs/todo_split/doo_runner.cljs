@@ -32,3 +32,5 @@
 (fw/start {:websocket-url "ws://localhost:3449/figwheel-ws"
            :build-id "test"
            :on-jsload (fn [] (#'runner))})
+
+(runner)

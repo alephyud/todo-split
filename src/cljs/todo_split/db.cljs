@@ -27,4 +27,5 @@
          #(valid-path? (::todos %) (::active-todo-path %))))
 
 (defn generate-random-db []
-  (gen/generate (s/gen ::db)))
+  (-> (gen/generate (s/gen ::db))
+      (assoc ::edit-mode? false)))
