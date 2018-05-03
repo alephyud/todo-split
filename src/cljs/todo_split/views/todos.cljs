@@ -33,8 +33,11 @@
       KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
       KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
       KeyCodes.X (rf/dispatch [:cut-active-todo])
+      KeyCodes.U (rf/dispatch [:undo])
       KeyCodes.ENTER (rf/dispatch [:edit-mode-on])
+      KeyCodes.K (rf/dispatch [:move-cursor-up])
       KeyCodes.UP (rf/dispatch [:move-cursor-up])
+      KeyCodes.J (rf/dispatch [:move-cursor-down])
       KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
       nil)))
 

@@ -7,13 +7,11 @@
   {::page :home
    ::todos []
    ::edit-mode? false
-   ::active-todo-path [0]
-   ::new-todo-id nil})
+   ::active-todo-path [0]})
 
 (s/def ::page keyword?)
 (s/def ::edit-mode? boolean?)
 (s/def ::todos ::todos/todolist)
-(s/def ::new-todo-id (s/nilable ::todos/uuid))
 (s/def ::active-todo-path (s/coll-of nat-int? :gen #(gen/return [0])))
 
 (defn valid-path? [todos [index & rest-path]]
@@ -22,8 +20,7 @@
            (valid-path? (get-in todos [index ::todos/subtasks]) rest-path))))
 
 (s/def ::db
-  (s/and (s/keys :req [::todos ::page ::active-todo-path ::edit-mode?]
-                 :opt [::new-todo-id])
+  (s/and (s/keys :req [::todos ::page ::active-todo-path ::edit-mode?])
          #(valid-path? (::todos %) (::active-todo-path %))))
 
 (defn generate-random-db []

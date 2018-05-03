@@ -30,6 +30,7 @@
                  [org.webjars/bootstrap "4.0.0"]
                  [org.webjars/font-awesome "5.0.6"]
                  [re-frame "0.10.5"]
+                 [day8.re-frame/undo "0.3.2"]
                  [reagent "0.7.0"]
                  [refactor-nrepl "2.4.0-SNAPSHOT"]
                  [ring-webjars "0.2.0"]

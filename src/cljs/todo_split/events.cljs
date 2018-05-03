@@ -5,6 +5,7 @@
             [re-frame.std-interceptors :refer [path]]
             [kee-frame.core :as kf :refer [reg-event-db reg-event-fx]]
             [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]
+            [day8.re-frame.undo :refer [undoable undo-config!]]
             [todo-split.models.todos :as todos]))
 
 ;;;; Dispatchers
@@ -33,7 +34,7 @@
 
 (reg-event-fx
  :generate-random-db
- [(rf/inject-cofx :random-db)]
+ [(undoable) (rf/inject-cofx :random-db)]
  (fn [{:keys [random-db]} _] {:db random-db}))
 
 ;; Todo-related
@@ -45,7 +46,7 @@
 
 (reg-event-fx
  :edit-todo-by-path
- [(rf/inject-cofx :new-uuids) (path [::db/todos])]
+ [(undoable) (rf/inject-cofx :new-uuids) (path [::db/todos])]
  (fn-traced [cofx params]
    {:db (todos/edit-todo-by-path cofx params)}))
 
@@ -58,6 +59,7 @@
 
 (reg-event-db
  :cut-todos
+ [(undoable)]
  (fn [db params]
    (update db ::db/todos #(first (todos/cut-todos % params)))))
 
@@ -68,7 +70,7 @@
 
 (reg-event-fx
  :split-todo
- [(rf/inject-cofx :new-uuids) (path [::db/todos])]
+ [(undoable) (rf/inject-cofx :new-uuids) (path [::db/todos])]
  (fn [{:keys [new-uuids] todos :db} [path inline?]]
    {:db (todos/split-todo todos path new-uuids inline?)}))
 
@@ -76,11 +78,6 @@
  :split-active-todo
  (fn [{{:keys [::db/active-todo-path]} :db} [inline?]]
    {:dispatch [:split-todo active-todo-path inline?]})) 
-
-(reg-event-db
- :reset-new-todo-id
- (fn [db _]
-   (dissoc db ::db/new-todo-id)))
 
 (reg-event-db
  :move-cursor-to-path
@@ -121,6 +118,10 @@
 
 (reg-sub :todos-flat (comp todos/flat-repr ::db/todos))
 
-(reg-sub :new-todo-id ::db/new-todo-id)
-
 (reg-sub :active-todo-path ::db/active-todo-path)
+
+;;;; Undo config
+
+(undo-config!
+ {:harvest-fn #(select-keys @% [::db/todos ::db/active-todo-path])
+  :reinstate-fn #(swap! %1 merge %2)})
