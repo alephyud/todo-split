@@ -70,13 +70,16 @@
 
 (reg-event-fx
  :split-todo
- [(undoable) (rf/inject-cofx :new-uuids) (path [::db/todos])]
- (fn [{:keys [new-uuids] todos :db} [path inline?]]
-   {:db (todos/split-todo todos path new-uuids inline?)}))
+ [(undoable) (rf/inject-cofx :new-uuids)]
+ (fn [{:keys [new-uuids] {:keys [::db/todos] :as db} :db} [path inline?]]
+   (when-let [new-todos (todos/split-todo todos path new-uuids inline?)]
+     {:db (merge db {::db/todos new-todos
+                     ::db/active-todo-path (cond-> path (not inline?) (conj 0))
+                     ::db/edit-mode? true})})))
 
 (reg-event-fx
  :split-active-todo
- (fn [{{:keys [::db/active-todo-path]} :db} [inline?]]
+ (fn-traced [{{:keys [::db/active-todo-path]} :db} [inline?]]
    {:dispatch [:split-todo active-todo-path inline?]})) 
 
 (reg-event-db

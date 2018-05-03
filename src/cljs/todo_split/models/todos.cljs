@@ -99,28 +99,31 @@
   (str "First step to " (cs/lower-case (first text)) (subs text 1)))
 
 (defn split-subtasks [{:keys [::text] :as todo} uuids]
-  [{::uuid (first uuids)
-    ::text (first-step-text text)}
-   {::uuid (second uuids)
-    ::text "..."}])
+  (when (splittable? todo)
+    [{::uuid (first uuids)
+      ::text (first-step-text text)}
+     {::uuid (second uuids)
+      ::text "..."}]))
 
-(defn split-hierarchical [todo uuids]
-  (cond-> todo
-    (splittable? todo)
-    (assoc ::subtasks (split-subtasks todo uuids))))
+(defn split-inline [todos index subtasks]
+  (-> (subvec todos 0 index)
+      (into subtasks)
+      (into (subvec todos (inc index)))))
 
-(defn split-inline [todos index uuids]
-  (let [todo (get todos index)]
-    (if (splittable? todo)
-      (-> (subvec todos 0 index)
-          (into (split-subtasks todo uuids))
-          (into (subvec todos (inc index))))
-      todos)))
+(defn split-todo
+  "Split the todo in `todos` designated by the `path` in two tasks, if it
+  is splittable (i. e. has text, doesn't have subtasks and is not done). If
+  `inline?` is true, the splitting is done inline; otherwise, two subtasks are
+  created.
 
-(defn split-todo [todos path uuids inline?]
-  (if inline?
-    (if (= 1 (count path))
-      (split-inline todos (first path) uuids)
-      (let [key-path (mapcat #(list % ::subtasks) (butlast path))]
-        (update-in todos key-path split-inline (peek path) uuids)))
-    (update-in todos (interpose ::subtasks path) split-hierarchical uuids)))
+  If the task is splittable, returns the resulting todos structure. Otherwise,
+  returns nil."
+  [todos path uuids inline?]
+  (let [key-path (interpose ::subtasks path)
+        todo (get-in todos key-path)]
+    (when-let [subtasks (split-subtasks todo uuids)]
+      (if inline?
+        (if-let [key-path (butlast key-path)]
+          (update-in todos key-path split-inline (peek path) subtasks)
+          (split-inline todos (peek path) subtasks))
+        (update-in todos key-path assoc ::subtasks subtasks)))))
