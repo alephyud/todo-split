@@ -25,4 +25,5 @@
 
 (defn generate-random-db []
   (-> (gen/generate (s/gen ::db))
-      (assoc ::edit-mode? false)))
+      (assoc ::edit-mode? false)
+      (update ::todos (partial mapv todos/set-undone))))

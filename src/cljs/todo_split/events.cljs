@@ -94,10 +94,21 @@
 
 (reg-event-db
  :move-cursor-down
- (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
             (todos/traverse-down todos active-todo-path false)))))
+
+(reg-event-fx
+ :insert-below
+ [(undoable) (rf/inject-cofx :new-uuids)]
+ (fn [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db}
+      _]
+   (let [new-path (update active-todo-path (dec (count active-todo-path)) inc)
+         new-todos (todos/insert-at todos new-path (first new-uuids))]
+     {:db (merge db {::db/todos new-todos
+                     ::db/active-todo-path new-path
+                     ::db/edit-mode? true})})))
 
 (reg-event-db
  :edit-mode-on

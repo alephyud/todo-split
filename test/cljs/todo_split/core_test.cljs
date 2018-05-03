@@ -70,10 +70,20 @@
     (is (= false (-> {:db sample-todos}
                      (todos/edit-todo-by-path [[1] {:done? false}])
                      second ::todos/done?))))
-  (testing "Adding new items"
-    (is (= "New text" (-> {:db sample-todos :new-uuid (uuid "1")}
+  (testing "Adding new sub-items"
+    (is (= "New text" (-> {:db sample-todos :new-uuids [(uuid "1")]}
                           (todos/edit-todo-by-path [[0 0] {:text "New text"}])
-                          first ::todos/subtasks first ::todos/text)))))
+                          first ::todos/subtasks first ::todos/text))))
+  (testing "Inserting new items"
+    (let [n (-> sample-todos count)
+          result (todos/insert-at sample-todos [3] (uuid "42"))]
+      (is (= (inc n) (count result)))
+      (is (= (uuid "42") (::todos/uuid (get result 3)))))
+    (let [n (-> sample-todos (get 4) ::todos/subtasks count)
+          result (todos/insert-at sample-todos [4 2] (uuid "42"))
+          result-branch (-> result (get 4) ::todos/subtasks)]
+      (is (= (inc n) (count result-branch)))
+      (is (= (uuid "42") (::todos/uuid (get result-branch 2)))))))
 
 (deftest todos-cutting
   (is (= (subvec sample-todos 1)

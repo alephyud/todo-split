@@ -6,7 +6,7 @@
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
 (s/def ::text (s/spec string? :gen todos.gen/task))
-(s/def ::done? boolean?)
+(s/def ::done? (s/spec boolean?))
 
 (s/def ::task
   (s/keys :req [::uuid ::text]
@@ -62,6 +62,13 @@
           (< (inc (get new-path depth))
              (get subtask-counts depth)) (update new-path depth inc)
           :else (recur (dec depth) (subvec new-path 0 depth)))))))
+
+(defn insert-at [todos [index & rest-path] uuid]
+  (if (seq rest-path)
+    (update-in todos [index ::subtasks] insert-at rest-path uuid)
+    (-> (subvec todos 0 index)
+        (conj {::text "" ::uuid uuid})
+        (into (subvec todos index)))))
 
 (defn edit-todo-by-path
   "Replaces the text using the selected index path"
@@ -127,3 +134,8 @@
           (update-in todos key-path split-inline (peek path) subtasks)
           (split-inline todos (peek path) subtasks))
         (update-in todos key-path assoc ::subtasks subtasks)))))
+
+(defn set-undone [todo]
+  (assoc todo
+         ::done? false
+         ::subtasks (mapv set-undone (::subtasks todo))))
