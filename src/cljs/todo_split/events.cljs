@@ -69,13 +69,13 @@
 (reg-event-fx
  :split-todo
  [(rf/inject-cofx :new-uuids) (path [::db/todos])]
- (fn [{:keys [new-uuids] todos :db} [path]]
-   {:db (todos/split-todo todos path new-uuids false)}))
+ (fn [{:keys [new-uuids] todos :db} [path inline?]]
+   {:db (todos/split-todo todos path new-uuids inline?)}))
 
 (reg-event-fx
  :split-active-todo
- (fn [{{:keys [::db/active-todo-path]} :db} _]
-   {:dispatch [:split-todo active-todo-path]})) 
+ (fn [{{:keys [::db/active-todo-path]} :db} [inline?]]
+   {:dispatch [:split-todo active-todo-path inline?]})) 
 
 (reg-event-db
  :reset-new-todo-id

@@ -29,7 +29,7 @@
   (when-not @(rf/subscribe [:edit-mode?])
     (condp = (.-which event)
       KeyCodes.G (rf/dispatch [:generate-random-db])
-      KeyCodes.S (rf/dispatch [:split-active-todo])
+      KeyCodes.S (rf/dispatch [:split-active-todo (.-shiftKey event)])
       KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
       KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
       KeyCodes.X (rf/dispatch [:cut-active-todo])

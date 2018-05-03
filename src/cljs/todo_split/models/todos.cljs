@@ -2,8 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
             [clojure.string :as cs]
-            [todo-split.models.todos.gen :as todos.gen]
-            [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]))
+            [todo-split.models.todos.gen :as todos.gen]))
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
 (s/def ::text (s/spec string? :gen todos.gen/task))
@@ -21,7 +20,7 @@
 (s/def ::todolist (s/coll-of ::task :gen-max 10))
 (s/def ::subtasks (s/coll-of ::task :gen-max 0))
 
-(defn-traced flat-repr
+(defn flat-repr
   ([todolist] (flat-repr todolist 0))
   ([todolist base-indent]
    (reduce
@@ -30,15 +29,15 @@
             (mapcat #(flat-repr [%] (inc base-indent)) subtasks)))
     [] todolist)))
 
-(defn-traced get-by-path [todos path]
+(defn get-by-path [todos path]
   (get-in todos (interpose ::subtasks path)))
 
-(defn-traced last-child-path [{:keys [::subtasks]} path]
+(defn last-child-path [{:keys [::subtasks]} path]
   (if (empty? subtasks)
     path
     (last-child-path (peek subtasks) (conj path (dec (count subtasks))))))
 
-(defn-traced traverse-up [todos path]
+(defn traverse-up [todos path]
   (cond
     (= path [0]) path
     (= (peek path) 0) (subvec path 0 (dec (count path)))
@@ -46,7 +45,7 @@
                 dec-path (update path (dec path-len) dec)]
             (last-child-path (get-by-path todos dec-path) dec-path))))
 
-(defn-traced traverse-down [todos path create-new?]
+(defn traverse-down [todos path create-new?]
   (let [new-item-adjustment (if create-new? 1 0)
         [subtask-counts inner-subtasks]
         (reduce (fn [[acc todos] index]
@@ -64,7 +63,7 @@
              (get subtask-counts depth)) (update new-path depth inc)
           :else (recur (dec depth) (subvec new-path 0 depth)))))))
 
-(defn-traced edit-todo-by-path
+(defn edit-todo-by-path
   "Replaces the text using the selected index path"
   [{todos :db :keys [new-uuids] :as cofx}
    [[index & rest-path] {:keys [text done? toggle-done] :as params}]]
@@ -78,7 +77,7 @@
               (edit-todo-by-path (update cofx :db get-in [index ::subtasks])
                                  [rest-path params]))))
 
-(defn-traced cut-todos
+(defn cut-todos
   "Takes a todo list and a path of indices (which may end in a range of two
    indices or a single number). Cuts out the todos designated by the path and
    returns a vector of:
@@ -93,7 +92,7 @@
           [remaining removed] (cut-todos (get-in todos key-path) [rest-path])]
       [(assoc-in todos key-path remaining) removed])))
 
-(defn-traced splittable? [{:keys [::subtasks ::text ::done?]}]
+(defn splittable? [{:keys [::subtasks ::text ::done?]}]
   (and (not (cs/blank? text)) (empty? subtasks) (not done?)))
 
 (defn first-step-text [text]
@@ -105,12 +104,12 @@
    {::uuid (second uuids)
     ::text "..."}])
 
-(defn-traced split-hierarchical [todo uuids]
+(defn split-hierarchical [todo uuids]
   (cond-> todo
     (splittable? todo)
     (assoc ::subtasks (split-subtasks todo uuids))))
 
-(defn-traced split-inline [todos index uuids]
+(defn split-inline [todos index uuids]
   (let [todo (get todos index)]
     (if (splittable? todo)
       (-> (subvec todos 0 index)
@@ -118,7 +117,7 @@
           (into (subvec todos (inc index))))
       todos)))
 
-(defn-traced split-todo [todos path uuids inline?]
+(defn split-todo [todos path uuids inline?]
   (if inline?
     (if (= 1 (count path))
       (split-inline todos (first path) uuids)
