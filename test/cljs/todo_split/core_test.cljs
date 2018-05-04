@@ -87,14 +87,15 @@
 
 (deftest todos-cutting
   (is (= (subvec sample-todos 1)
-         (first (todos/cut-todos sample-todos [[0]]))))
+         (first (todos/cut-todos sample-todos [0]))))
   (is (= (into (subvec sample-todos 0 1) (subvec sample-todos 2))
-         (first (todos/cut-todos sample-todos [[1]]))))
+         (first (todos/cut-todos sample-todos [1]))))
   (is (= (let [key-path [4 ::todos/subtasks]
                subtasks (get-in sample-todos key-path)]
            (assoc-in sample-todos key-path
                      (into (subvec subtasks 0 1) (subvec subtasks 2))))
-         (first (todos/cut-todos sample-todos [[4 1]])))))
+         (first (todos/cut-todos sample-todos [4 1]))))
+  (is (= true (last (todos/cut-todos sample-todos [4 3])))))
 
 (deftest todos-splitting
   (let [uuids [(uuid "1") (uuid "2")]]

@@ -25,9 +25,12 @@ After that, open `http://localhost:3000` for the application and
 
 ## To-do list :)
 
-* Editing and selecting states (like in Jupyter)
-* Marking tasks as done
-* Splitting tasks
+* ~~Editing and selecting states (like in Jupyter)~~
+* ~~Marking tasks as done~~
+* ~~Splitting tasks~~
+* ~~When the last task in list is removed, move cursor upwards~~
+* Local storage
+* Backend
 
 ## License
 

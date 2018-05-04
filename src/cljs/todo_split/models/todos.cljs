@@ -88,16 +88,19 @@
   "Takes a todo list and a path of indices (which may end in a range of two
    indices or a single number). Cuts out the todos designated by the path and
    returns a vector of:
-    - the todo list from which the selected todos are cut, and
-    - the todos that were cut out."
-  [todos [[index & rest-path]]]
+    - the todo list from which the selected todos are cut,
+    - the todos that were cut out, and
+    - whether the items that were cut were the last among their siblings."
+  [todos [index & rest-path]]
   (if (empty? rest-path)
     (let [[start end] (if (seq? index) index [index index])]
       [(into (subvec todos 0 start) (subvec todos (inc end)))
-       (subvec todos start (inc end))])
+       (subvec todos start (inc end))
+       (>= end (dec (count todos)))])
     (let [key-path [index ::subtasks]
-          [remaining removed] (cut-todos (get-in todos key-path) [rest-path])]
-      [(assoc-in todos key-path remaining) removed])))
+          [remaining removed last?] (cut-todos (get-in todos key-path)
+                                               rest-path)]
+      [(assoc-in todos key-path remaining) removed last?])))
 
 (defn splittable? [{:keys [::subtasks ::text ::done?]}]
   (and (not (cs/blank? text)) (empty? subtasks) (not done?)))

@@ -60,8 +60,17 @@
 (reg-event-db
  :cut-todos
  [(undoable)]
- (fn [db params]
-   (update db ::db/todos #(first (todos/cut-todos % params)))))
+ (fn [{:keys [::db/todos] :as db} [path]]
+   (let [[remaining removed last?] (todos/cut-todos todos path)
+         ;; If the last item in a list was removed, move the cursor upwards
+         new-path (if (and last? (not= [0] path))
+                    (let [n (dec (count path))
+                          path-last (get path n)]
+                      (if (zero? path-last)
+                        (subvec path 0 n)
+                        (update path n dec)))
+                    path)]
+     (assoc db ::db/todos remaining ::db/active-todo-path new-path))))
 
 (reg-event-fx
  :cut-active-todo
