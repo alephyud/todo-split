@@ -11,7 +11,8 @@
             [todo-split.ajax :refer [load-interceptors!]]
             [kee-frame.core :as kf :refer [reg-controller]]
             [todo-split.events]
-            [todo-split.views.todos :as views.todos]
+            [todo-split.views.todos]
+            [todo-split.views.help]
             [todo-split.db :as db])
   (:import goog.History
            [goog.events KeyCodes]))
@@ -34,8 +35,7 @@
    [:div#collapsing-navbar.collapse.navbar-collapse
     [:ul.nav.navbar-nav.mr-auto
      [nav-link "Home" :home]
-     [nav-link "Dev info" :info]
-     [nav-link "About" :about]]]])
+     [nav-link "Help" :help]]]])
 
 (defn about-page []
   [:div.container.app-container
@@ -53,9 +53,8 @@
              {:__html (md->html docs)}}]])])
 
 (def pages
-  {:home #'views.todos/todos-page
-   :info #'stub-page
-   :about #'about-page})
+  {:home #'todo-split.views.todos/todos-page
+   :help #'todo-split.views.help/help-page})
 
 (defn page []
   [:div
@@ -66,8 +65,7 @@
 ;; Routes
 
 (def routes ["" {"/" :home
-                 "/info" :info
-                 "/about" :about}])
+                 "/help" :help}])
 
 #_(reg-controller :my-controller
                 {:params (fn [{:keys [handler route-params]}]

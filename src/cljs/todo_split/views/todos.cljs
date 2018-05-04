@@ -4,32 +4,15 @@
             [clojure.string :as cs]
             [goog.events :as events]
             [todo-split.models.todos :as todos]
+            [todo-split.views.helpers :as vh]
             [todo-split.db :as db])
   (:import [goog.events KeyCodes]))
-
-(defn select-all [input-element]
-  (.setSelectionRange input-element 0 (.. input-element -value -length)))
-
-(defn component-with-handlers
-  "A component that watches non-local events (on document), e. g. keyboard
-  events. Handlers are placed when the component is mounted and removed when
-  the component is unmounted."
-  [handlers render-fn]
-  (r/create-class
-   {:component-did-mount
-    #(doseq [[event handler] handlers]
-       (.addEventListener js/document.body (name event) handler))
-    :component-will-unmount
-    #(doseq [[event handler] handlers]
-       (.removeEventListener js/document.body (name event) handler))
-    :reagent-render
-    render-fn}))
 
 (defn non-edit-mode-key-handler [event]
   (when-not @(rf/subscribe [:edit-mode?])
     (condp = (.-which event)
       KeyCodes.G (rf/dispatch [:generate-random-db])
-      KeyCodes.S (rf/dispatch [:split-active-todo])
+      KeyCodes.S (rf/dispatch [:split-active-todo (.-shiftKey event)])
       KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
       KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
       KeyCodes.X (rf/dispatch [:cut-active-todo])
@@ -44,19 +27,14 @@
       nil)))
 
 (defn edit-mode-key-handler [{:keys [save stop]} event]
-  (if (and (.-ctrlKey event) (.-shiftKey event))
-    (condp = (.-which event)
-      KeyCodes.BACKSPACE (do (rf/dispatch [:cut-active-todo])
-                             (.preventDefault event))
-      nil)
-    (condp = (.-which event)
-      KeyCodes.ENTER (do (save)
-                         (rf/dispatch (if (.-shiftKey event)
-                                        [:insert-below] [:move-cursor-down])))
-      KeyCodes.ESC (stop)
-      KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
-      KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
-      nil)))
+  (condp = (.-which event)
+    KeyCodes.ENTER (do (save)
+                       (rf/dispatch (if (.-shiftKey event)
+                                      [:insert-below] [:move-cursor-down])))
+    KeyCodes.ESC (stop)
+    KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
+    KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
+    nil))
 
 (defn todo-input [{:keys [text on-save on-stop]}]
   (let [!val (r/atom text)
@@ -68,7 +46,7 @@
      {:component-did-mount                                               
       #(let [input (r/dom-node %)]                                       
          (.focus input)
-         (select-all input))
+         (vh/select-all input))
       :component-will-receive-props
       (fn [this [_ {:keys [text]}]]
         (when-not (= text @!val)
@@ -77,7 +55,7 @@
       :component-did-update                                               
       #(let [input (r/dom-node %)]
          (when @!external-update?
-           (select-all input)
+           (vh/select-all input)
            (reset! !external-update? false)))
       :reagent-render
       (fn [props]
@@ -146,7 +124,7 @@
        [todo-widget (conj path num-items) nil])]))
 
 (defn todos-page []
-  (component-with-handlers
+  (vh/component-with-handlers
    {:keydown non-edit-mode-key-handler}
    (fn []
      [:div.container.app-container
