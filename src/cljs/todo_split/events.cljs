@@ -6,16 +6,25 @@
             [kee-frame.core :as kf :refer [reg-event-db reg-event-fx]]
             [day8.re-frame.tracing :refer-macros [fn-traced defn-traced]]
             [day8.re-frame.undo :refer [undoable undo-config!]]
+            [akiroz.re-frame.storage :refer [persist-db]]
             [todo-split.models.todos :as todos]))
 
 ;;;; Dispatchers
 
 ;; General
 
+(def local-storage-key "todosplit-0.1.0-")
+
+(def persist-todos
+  (persist-db (keyword (str local-storage-key "todos")) ::db/todos))
+(def persist-cursor
+  (persist-db (keyword (str local-storage-key "cursor")) ::db/active-todo-path))
+
 (reg-event-db
  :initialize-db
- (fn [_ _]
-   db/default-db))
+ [persist-todos persist-cursor]
+ (fn [db _]
+   (merge db/default-db db)))
 
 (reg-event-db
  :set-active-page
@@ -34,7 +43,7 @@
 
 (reg-event-fx
  :generate-random-db
- [(undoable) (rf/inject-cofx :random-db)]
+ [(undoable) persist-todos persist-cursor (rf/inject-cofx :random-db)]
  (fn [{:keys [random-db]} _] {:db random-db}))
 
 ;; Todo-related
@@ -46,7 +55,7 @@
 
 (reg-event-fx
  :edit-todo-by-path
- [(undoable) (rf/inject-cofx :new-uuids) (path [::db/todos])]
+ [(undoable) persist-todos (rf/inject-cofx :new-uuids) (path [::db/todos])]
  (fn-traced [cofx params]
    {:db (todos/edit-todo-by-path cofx params)}))
 
@@ -59,7 +68,7 @@
 
 (reg-event-db
  :cut-todos
- [(undoable)]
+ [(undoable) persist-todos persist-cursor]
  (fn [{:keys [::db/todos] :as db} [path]]
    (let [[remaining removed last?] (todos/cut-todos todos path)
          ;; If the last item in a list was removed, move the cursor upwards
@@ -79,7 +88,7 @@
 
 (reg-event-fx
  :split-todo
- [(undoable) (rf/inject-cofx :new-uuids)]
+ [(undoable) persist-todos persist-cursor (rf/inject-cofx :new-uuids)]
  (fn [{:keys [new-uuids] {:keys [::db/todos] :as db} :db} [path inline?]]
    (when-let [new-todos (todos/split-todo todos path new-uuids inline?)]
      {:db (merge db {::db/todos new-todos
@@ -93,16 +102,18 @@
 
 (reg-event-db
  :move-cursor-to-path
- [(path ::db/active-todo-path)]
+ [persist-cursor (path ::db/active-todo-path)]
  (fn-traced [_ [index]] index))
 
 (reg-event-db
  :move-cursor-up
+ [persist-cursor]
  (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (assoc db ::db/active-todo-path (todos/traverse-up todos active-todo-path))))
 
 (reg-event-db
  :move-cursor-down
+ [persist-cursor]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
@@ -110,7 +121,7 @@
 
 (reg-event-fx
  :insert-below
- [(undoable) (rf/inject-cofx :new-uuids)]
+ [(undoable) persist-todos persist-cursor (rf/inject-cofx :new-uuids)]
  (fn [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db}
       _]
    (let [new-path (update active-todo-path (dec (count active-todo-path)) inc)

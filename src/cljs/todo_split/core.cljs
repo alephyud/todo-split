@@ -102,5 +102,6 @@
   (load-interceptors!)
   (fetch-docs!)
   (hook-browser-navigation!)
+  (rf/dispatch [:initialize-db])
   (start-kf!))
 

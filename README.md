@@ -21,7 +21,7 @@ To start a development Figwheel server for the application, run:
     lein figwheel
     
 After that, open `http://localhost:3000` for the application and
-`http://localhost:3000/test` for frontend test.
+`http://localhost:3000/test` for frontend tests.
 
 ## To-do list :)
 
@@ -29,7 +29,16 @@ After that, open `http://localhost:3000` for the application and
 * ~~Marking tasks as done~~
 * ~~Splitting tasks~~
 * ~~When the last task in list is removed, move cursor upwards~~
-* Local storage
+* ~~Local storage~~
+* Help page
+* First deployment
+* Expanding and collapsing items
+* Expanded to-do item format (?)
+    - timestamps
+    - notes
+    - images
+    - attached files
+* Integration tests
 * Backend
 
 ## License
