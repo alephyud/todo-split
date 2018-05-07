@@ -52,4 +52,7 @@
          [:td "Redo last action"]]
         [:tr
          [:td [:kbd "G"]]
-         [:td "Generate a random list of tasks"]]]]])))
+         [:td "Generate a random list of tasks"]]
+        [:tr
+         [:td [:kbd "H"]]
+         [:td "Display this help message"]]]]])))

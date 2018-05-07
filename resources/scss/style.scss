@@ -1,5 +1,25 @@
 @import "node_modules/bootstrap/scss/bootstrap";
 
+html, body, #app {
+  height: 100%;
+}
+
+.waiting-screen {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  .waiting-message {
+    position: absolute;
+    width: 300px;
+    margin-left: -150px;
+    height: 150px;
+    margin-top: -75px;
+    top: 50%;
+    left: 50%;
+  }
+}
+
 .app-container {
   margin: 15px 0;
 }

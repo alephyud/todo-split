@@ -126,15 +126,17 @@
        [todo-widget (conj path num-items) nil])]))
 
 (defn initial-advice []
-  [:div
-   [:div "Enter what you want to do."]
-   [:div "For help on controls and keyboard shortcuts, "
-    "click " [:strong "Help"] " in the menu above."]
-   [:div "Not sure what you need to do? Click "
-    [:a.btn.btn-sm.btn-info
-     {:on-click #(rf/dispatch [:generate-random-db])}
-     "here"] " to have a list of tasks generated "
-    "for you."]])
+  [:div.mt-4
+   [:div "This is a simple to-do list app."]
+   [:ul
+    [:li "Enter what you want to do."]
+    [:li "For help on controls and keyboard shortcuts, "
+     "click " [:strong "Help"] " in the menu above."]
+    [:li "Not sure what you need to do? Click "
+     [:a.btn.btn-sm.btn-info
+      {:on-click #(rf/dispatch [:generate-random-db])}
+      "here"] " to have a list of tasks generated "
+     "for you."]]])
 
 (defn todos-page []
   (vh/component-with-handlers
