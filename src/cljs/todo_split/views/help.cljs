@@ -7,7 +7,7 @@
 
 (defn key-handler [event]
   (condp = (.-which event)
-    KeyCodes.ESC #(rf/dispatch [:go-to-home-page])
+    KeyCodes.ESC (rf/dispatch [:hide-help])
     nil))
 
 (defn help-page []

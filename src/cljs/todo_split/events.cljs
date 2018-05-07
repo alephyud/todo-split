@@ -24,7 +24,11 @@
  :initialize-db
  [persist-todos persist-cursor]
  (fn [db _]
-   (merge db/default-db db)))
+   (merge db/default-db
+          (cond-> db
+            (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
+            (nil? (::db/todos db)) (dissoc ::db/todos)
+            (empty? (::db/todos db)) (assoc ::db/edit-mode? true)))))
 
 (reg-event-db
  :set-active-page
@@ -45,6 +49,16 @@
  :generate-random-db
  [(undoable) persist-todos persist-cursor (rf/inject-cofx :random-db)]
  (fn [{:keys [random-db]} _] {:db random-db}))
+
+(reg-event-fx
+ :show-help
+ (fn [_ _]
+   {:navigate-to [:help]}))
+
+(reg-event-fx
+ :hide-help
+ (fn [_ _]
+   {:navigate-to [:home]}))
 
 ;; Todo-related
 

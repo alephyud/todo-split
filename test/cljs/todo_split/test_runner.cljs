@@ -1,4 +1,4 @@
-(ns ^:figwheel-always todo-split.doo-runner
+(ns ^:figwheel-always todo-split.test-runner
   (:require [cljs.test :as test :include-macros true :refer [report]]
             [todo-split.core-test]
             [figwheel.client :as fw]))

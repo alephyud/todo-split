@@ -89,7 +89,7 @@
      {:output-to "target/cljsbuild/public/js/test.js"
       :output-dir "target/cljsbuild/public/js/test-out"
       :asset-path "/js/test-out"
-      :main "todo-split.doo-runner"
+      :main "todo-split.test-runner"
       :source-map true
       :optimizations :none
       :aot-cache true

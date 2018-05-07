@@ -30,7 +30,8 @@ After that, open `http://localhost:3000` for the application and
 * ~~Splitting tasks~~
 * ~~When the last task in list is removed, move cursor upwards~~
 * ~~Local storage~~
-* Help page
+* ~~Help page~~
+* Instructions on generating new page and help
 * First deployment
 * Expanding and collapsing items
 * Expanded to-do item format (?)

@@ -24,6 +24,7 @@
       KeyCodes.UP (rf/dispatch [:move-cursor-up])
       KeyCodes.J (rf/dispatch [:move-cursor-down])
       KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
+      KeyCodes.H (rf/dispatch [:show-help])
       nil)))
 
 (defn edit-mode-key-handler [{:keys [save stop]} event]
@@ -65,7 +66,8 @@
                  :value       @!val
                  :on-blur     save
                  :on-change   #(reset! !val (-> % .-target .-value))
-                 :on-key-down key-handler})])})))
+                 :on-key-down key-handler
+                 :placeholder "What needs to be done?"})])})))
 
 (defn to-rgb [{:keys [red green blue]}]
   (let [hex #(str (if (< % 16) "0")
@@ -123,13 +125,23 @@
      (when (= active-path (conj path num-items))
        [todo-widget (conj path num-items) nil])]))
 
+(defn initial-advice []
+  [:div
+   [:div "Enter what you want to do."]
+   [:div "For help on controls and keyboard shortcuts, "
+    "click " [:strong "Help"] " in the menu above."]
+   [:div "Not sure what you need to do? Click "
+    [:a.btn.btn-sm.btn-info
+     {:on-click #(rf/dispatch [:generate-random-db])}
+     "here"] " to have a list of tasks generated "
+    "for you."]])
+
 (defn todos-page []
   (vh/component-with-handlers
    {:keydown non-edit-mode-key-handler}
    (fn []
-     [:div.container.app-container
-      #_[:div.mb-1
-       [:button.btn.btn-default
-        {:on-click #(rf/dispatch [:generate-random-db])}
-        "Generate random list of tasks"]]
-      [todolist [] @(rf/subscribe [:todos])]])))
+     (let [todos @(rf/subscribe [:todos])]
+       [:div.container.app-container
+        [todolist [] todos]
+        (when (empty? todos)
+          [initial-advice])]))))
