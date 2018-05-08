@@ -10,30 +10,37 @@
 
 (defn non-edit-mode-key-handler [event]
   (when-not @(rf/subscribe [:edit-mode?])
-    (condp = (.-which event)
-      KeyCodes.G (rf/dispatch [:generate-random-db])
-      KeyCodes.S (rf/dispatch [:split-active-todo (.-shiftKey event)])
-      KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
-      KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
-      KeyCodes.X (rf/dispatch [:cut-active-todo])
-      KeyCodes.U (rf/dispatch [:undo])
-      KeyCodes.R (rf/dispatch [:redo])
-      KeyCodes.ENTER (rf/dispatch (if (.-shiftKey event)
-                                    [:insert-below] [:edit-mode-on]))
-      KeyCodes.O (rf/dispatch [:insert-below])
-      KeyCodes.K (rf/dispatch [:move-cursor-up])
-      KeyCodes.UP (rf/dispatch [:move-cursor-up])
-      KeyCodes.J (rf/dispatch [:move-cursor-down])
-      KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
-      KeyCodes.H (when-not (.-ctrlKey event) (rf/dispatch [:show-help]))
-      nil)))
+    (let [!keep-default (atom false)]
+      (condp = (.-which event)
+        KeyCodes.G (rf/dispatch [:generate-random-db])
+        KeyCodes.S (rf/dispatch [:split-active-todo (.-shiftKey event)])
+        KeyCodes.SPACE (rf/dispatch [:toggle-active-todo])
+        KeyCodes.DELETE (rf/dispatch [:cut-active-todo])
+        KeyCodes.X (rf/dispatch [:cut-active-todo])
+        KeyCodes.D (rf/dispatch [:cut-active-todo])
+        KeyCodes.U (rf/dispatch [:undo])
+        KeyCodes.R (rf/dispatch [:redo])
+        KeyCodes.ENTER (rf/dispatch (if (.-shiftKey event)
+                                      [:insert-below] [:edit-mode-on]))
+        KeyCodes.O (rf/dispatch (if (.-shiftKey event)
+                                  [:insert-above] [:insert-below]))
+        KeyCodes.K (rf/dispatch [:move-cursor-up])
+        KeyCodes.UP (rf/dispatch [:move-cursor-up])
+        KeyCodes.J (rf/dispatch [:move-cursor-down])
+        KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
+        KeyCodes.H (if-not (.-ctrlKey event)
+                     (rf/dispatch [:show-help])
+                     (reset! !keep-default true))
+        (reset! !keep-default true))
+      (when-not @!keep-default
+        (doto event (.preventDefault) (.stopPropagation))))))
 
 (defn edit-mode-key-handler [{:keys [save stop]} event]
   (condp = (.-which event)
     KeyCodes.ENTER (do (save)
                        (rf/dispatch (if (.-shiftKey event)
                                       [:insert-below] [:move-cursor-down])))
-    KeyCodes.ESC (stop)
+    KeyCodes.ESC (do (save) (stop))
     KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
     KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
     nil))
@@ -45,7 +52,8 @@
         save #(let [v (-> @!val str cs/trim)] (on-save v))
         key-handler (partial edit-mode-key-handler {:stop stop :save save})]
     (r/create-class
-     {:component-did-mount                                               
+     {:display-name "todo-input"
+      :component-did-mount
       #(let [input (r/dom-node %)]                                       
          (.focus input)
          (vh/select-all input))
@@ -82,40 +90,50 @@
 
 (declare todolist)
 
-(defn progress-icon [percentage])
-
 (defn todo-widget
-  [path {:keys [::todos/uuid ::todos/text ::todos/subtasks ::todos/done?]
-         :as todo-item}]
-  (let [active-path @(rf/subscribe [:active-todo-path])
-        active? (= path active-path)
-        editable? (and active? @(rf/subscribe [:edit-mode?]))
-        depth (count (take-while identity (map = path active-path)))]
-    [:div.todo-wrapper
-     {:style {:background-color (when (pos? depth) (selected-shade depth))}}
-     [:div.todo-list-item
-      (if editable?
-        {:class "todo-editable"}
-        {:class (->> [(when active? "todo-active")
-                      (when done? "todo-done")]
-                     (keep identity) (cs/join " "))
-         :on-click #(do (rf/dispatch [:move-cursor-to-path path])
-                        (rf/dispatch [:edit-mode-on]))})
-      [:i {:class (if done? "fas fa-check text-success" "far fa-square")
-           :on-click (fn [e]
-                       (rf/dispatch
-                        [:edit-todo-by-path path {:done? (not done?)}])
-                       (.stopPropagation e))}]
-      (if editable?
-        [todo-input {:text text
-                     :on-save #(when (not= (or text "") (or % ""))
-                                 (rf/dispatch
-                                  [:edit-todo-by-path path {:text %}]))
-                     :on-stop #(rf/dispatch [:edit-mode-off])}]
-        [:div.todo-text (str text " ")])]
-     (when (or subtasks (= active-path (conj path 0)))
-       [:div {:style {:margin-left 20}}
-        (todolist path subtasks)])]))
+  [path {:keys [::todos/text ::todos/subtasks ::todos/done?] :as todo-item}]
+  (r/create-class
+   {:display-name "todo-list-item-widget"
+    :component-will-update
+    (fn [this [_ path]]
+      (when (= path @(rf/subscribe [:active-todo-path]))
+        (vh/scroll-into-view-if-needed! (r/dom-node this))))
+    :reagent-render
+    (fn [path {:keys [::todos/text ::todos/subtasks] :as todo-item}]
+      (let [active-path @(rf/subscribe [:active-todo-path])
+            active? (= path active-path)
+            editable? (and active? @(rf/subscribe [:edit-mode?]))
+            done-percentage (todos/done-percentage todo-item)
+            done? (> done-percentage 0.999)
+            depth (count (take-while identity (map = path active-path)))]
+        [:div.todo-wrapper
+         {:style {:background-color (when (pos? depth) (selected-shade depth))}}
+         [:div.todo-list-item
+          (if editable?
+            {:class "todo-editable"}
+            {:class (->> [(when active? "todo-active")
+                          (when done? "todo-done")]
+                         (keep identity) (cs/join " "))
+             :on-click #(do (rf/dispatch [:move-cursor-to-path path])
+                            (rf/dispatch [:edit-mode-on]))})
+          (if (seq subtasks)
+            (vh/completion-chart done-percentage)
+            [:i.icon
+             {:class (if done? "fas fa-check text-success" "far fa-square")
+              :on-click (fn [e]
+                          (rf/dispatch
+                           [:edit-todo-by-path path {:done? (not done?)}])
+                          (.stopPropagation e))}])
+          (if editable?
+            [todo-input {:text text
+                         :on-save #(when (not= (or text "") (or % ""))
+                                     (rf/dispatch
+                                      [:edit-todo-by-path path {:text %}]))
+                         :on-stop #(rf/dispatch [:edit-mode-off])}]
+            [:div.todo-text (str text " ")])]
+         (when (or subtasks (= active-path (conj path 0)))
+           [:div {:style {:margin-left 20}}
+            (todolist path subtasks)])]))}))
 
 (defn todolist [path items]
   (let [active-path @(rf/subscribe [:active-todo-path])

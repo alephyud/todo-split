@@ -130,6 +130,15 @@
             (todos/traverse-down todos active-todo-path false)))))
 
 (reg-event-fx
+ :insert-above
+ [(undoable) persist-todos persist-cursor (rf/inject-cofx :new-uuids)]
+ (fn-traced
+  [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
+  (let [new-todos (todos/insert-at todos active-todo-path (first new-uuids))]
+    {:db (merge db {::db/todos new-todos
+                    ::db/edit-mode? true})})))
+
+(reg-event-fx
  :insert-below
  [(undoable) persist-todos persist-cursor (rf/inject-cofx :new-uuids)]
  (fn-traced

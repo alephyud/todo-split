@@ -1,5 +1,6 @@
 (ns todo-split.views.helpers
- (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [clojure.string :as cs]))
 
 (defn select-all [input-element]
   (.setSelectionRange input-element 0 (.. input-element -value -length)))
@@ -18,3 +19,45 @@
        (.removeEventListener js/document.body (name event) handler))
     :reagent-render
     render-fn}))
+
+(defn scroll-into-view-if-needed! [elem]
+  ;; https://gist.github.com/hsablonniere/2581101
+  (let [parent js/document.body.parentElement ; (.-parentNode elem)
+        parent-style (js/window.getComputedStyle parent nil)
+        parent-border-top (-> parent-style
+                              (.getPropertyValue "border-top-width")
+                              js/parseInt)
+        parent-border-left (-> parent-style
+                               (.getPropertyValue "border-left-width")
+                               js/parseInt)
+        over-top? (< (- (.-offsetTop elem) (.-offsetTop parent))
+                     (.-scrollTop parent))
+        over-bottom? (> (- (+ (.-offsetTop elem) (.-clientHeight elem))
+                            (.-offsetTop parent) parent-border-top)
+                         (+ (.-scrollTop parent) (.-clientHeight parent)))
+        over-left? (< (- (.-offsetLeft elem) (.-offsetLeft parent))
+                      (.-scrollLeft parent))
+        over-right? (> (- (+ (.-offsetLeft elem) (.-clientWidth elem))
+                           (.-offsetLeft parent) parent-border-left)
+                        (+ (.-scrollLeft parent) (.-clientWidth parent)))
+        align-with-top? (and over-top? (not over-bottom?))]
+    #_(println "Check: " (.-offsetTop elem) (.-clientHeight elem)
+             (.-offsetTop parent) parent-border-top
+             (.-scrollTop parent) (.-clientHeight parent))
+    (when (or over-top? over-bottom? over-left? over-right?)
+      (.scrollIntoView elem align-with-top?))))
+
+(defn completion-chart [percentage]
+  (let [coords-for #(let [w (* 2 % Math/PI)]
+                      [(* 0.9 (Math/cos w)) (* 0.9 (Math/sin w))])
+        large-arc? (if (> percentage 0.5) 1 0)
+        path-data (-> (into ["M"] (coords-for 0))
+                      (into ["A" 1 1 0 large-arc? 1])
+                      (into (coords-for percentage))
+                      (into ["L" 0 0]))]
+    [:svg.icon {:view-box "-1 -1 2 2"
+                :style {:transform "rotate(-90deg)"}
+                :width "1rem"}
+     [:path {:d (cs/join " " path-data) :fill "green"}]
+     [:circle {:cx 0 :cy 0 :r 0.9 :stroke "#555" :fill "none"
+               :stroke-width 0.15}]]))

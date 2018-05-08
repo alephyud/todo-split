@@ -27,6 +27,9 @@
          [:td [:kbd "Shift"] " + " [:kbd "Enter"] " or " [:kbd "O"]]
          [:td "Add and edit a new task after the current one"]]
         [:tr
+         [:td [:kbd "Shift"] " + " [:kbd "O"]]
+         [:td "Add and edit a new task before the current one"]]
+        [:tr
          [:td [:kbd "Space"]]
          [:td "Mark the current task done (or undone)"]]
         [:tr
@@ -36,7 +39,7 @@
          [:td [:kbd "Shift"] " + " [:kbd "S"]]
          [:td "Split the current task inline"]]
         [:tr
-         [:td [:kbd "Del"] " or " [:kbd "X"]]
+         [:td [:kbd "Del"], ", " [:kbd "D"] " or " [:kbd "X"]]
          [:td "Delete the current task"]]
         [:tr
          [:td [:kbd "Up"] " or " [:kbd "K"]]
