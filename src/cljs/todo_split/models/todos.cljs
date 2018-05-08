@@ -7,10 +7,11 @@
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
 (s/def ::text (s/spec string? :gen todos.gen/task))
 (s/def ::done? (s/spec boolean?))
+(s/def ::collapsed? (s/spec boolean?))
 
 (s/def ::task
   (s/keys :req [::uuid ::text]
-          :opt [::subtasks ::done?]))
+          :opt [::subtasks ::done? ::collapsed?]))
 
 (s/def ::indent nat-int?)
 
@@ -32,27 +33,30 @@
 (defn get-by-path [todos path]
   (get-in todos (interpose ::subtasks path)))
 
-(defn last-child-path [{:keys [::subtasks]} path]
-  (if (empty? subtasks)
+(defn last-child-path [{:keys [::subtasks ::collapsed?]} path skip-collapsed?]
+  (if (or (empty? subtasks) (and skip-collapsed? collapsed?))
     path
     (last-child-path (peek subtasks) (conj path (dec (count subtasks))))))
 
-(defn traverse-up [todos path]
+(defn traverse-up [todos path skip-collapsed?]
   (cond
     (= path [0]) path
     (= (peek path) 0) (subvec path 0 (dec (count path)))
     :else (let [path-len (count path)
                 dec-path (update path (dec path-len) dec)]
-            (last-child-path (get-by-path todos dec-path) dec-path))))
+            (last-child-path (get-by-path todos dec-path) dec-path
+                             skip-collapsed?))))
 
-(defn traverse-down [todos path create-new?]
+(defn traverse-down [todos path create-new? skip-collapsed?]
   (let [new-item-adjustment (if create-new? 1 0)
-        [subtask-counts inner-subtasks]
+        [subtask-counts inner-subtasks inner-collapsed?]
         (reduce (fn [[acc todos] index]
-                  [(conj acc (+ (count todos) new-item-adjustment))
-                   (get-in todos [index ::subtasks])])
+                  (let [{:keys [::subtasks ::collapsed?]} (get todos index)]
+                    [(conj acc (+ (count todos) new-item-adjustment))
+                     subtasks collapsed?]))
                 [[] todos] path)]
-    (if (or (pos? (count inner-subtasks))
+    (if (or (and (pos? (count inner-subtasks))
+                 (not (and inner-collapsed? skip-collapsed?)))
             (and create-new? (< (peek path) (dec (peek subtask-counts)))))
       (conj path 0)
       (loop [depth (dec (count path))
@@ -73,13 +77,14 @@
 (defn edit-todo-by-path
   "Replaces the text using the selected index path"
   [{todos :db :keys [new-uuids] :as cofx}
-   [[index & rest-path] {:keys [text done? toggle-done] :as params}]]
+   [[index & rest-path] {:keys [text done? toggle-done collapsed?] :as params}]]
   (if (empty? rest-path)
     (update (or todos []) index
             #(merge {::uuid (first new-uuids)} %
                     (when text {::text text})
                     (when (some? done?) {::done? done?})
-                    (when toggle-done {::done? (not (::done? %))})))
+                    (when toggle-done {::done? (not (::done? %))})
+                    (when (some? collapsed?) {::collapsed? collapsed?})))
     (assoc-in todos [index ::subtasks]
               (edit-todo-by-path (update cofx :db get-in [index ::subtasks])
                                  [rest-path params]))))

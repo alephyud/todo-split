@@ -28,6 +28,8 @@
         KeyCodes.UP (rf/dispatch [:move-cursor-up])
         KeyCodes.J (rf/dispatch [:move-cursor-down])
         KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
+        KeyCodes.LEFT (rf/dispatch [:collapse-or-go-to-parent])
+        KeyCodes.RIGHT (rf/dispatch [:expand-or-go-to-child])
         KeyCodes.H (if-not (.-ctrlKey event)
                      (rf/dispatch [:show-help])
                      (reset! !keep-default true))
@@ -90,6 +92,15 @@
 
 (declare todolist)
 
+(defn subtasks-hidden [total-subtasks completed-subtasks]
+  [:div.small.text-muted {:style {:margin-right 20}}
+   (str total-subtasks
+        " item" (when (> total-subtasks 1) "s") " hidden"
+        (when (pos? completed-subtasks)
+          (str " (" (if (= total-subtasks completed-subtasks)
+                      "all" completed-subtasks)
+               " done)")))])
+
 (defn todo-widget
   [path todo-item]
   (r/create-class
@@ -99,8 +110,8 @@
       (when (= path @(rf/subscribe [:active-todo-path]))
         (vh/scroll-into-view-if-needed! (r/dom-node this))))
     :reagent-render
-    (fn [path {:keys [::todos/text ::todos/subtasks ::todos/done?]
-               :as todo-item}]
+    (fn [path {:keys [::todos/text ::todos/subtasks ::todos/done?
+                      ::todos/collapsed?] :as todo-item}]
       (let [active-path @(rf/subscribe [:active-todo-path])
             active? (= path active-path)
             editable? (and active? @(rf/subscribe [:edit-mode?]))
@@ -131,10 +142,12 @@
                                      (rf/dispatch
                                       [:edit-todo-by-path path {:text %}]))
                          :on-stop #(rf/dispatch [:edit-mode-off])}]
-            [:div.todo-text (str text " ")])]
-         (when (or subtasks (= active-path (conj path 0)))
+            [:div.todo-text (str text " ")])
+          (when (and subtasks collapsed?)
+            [subtasks-hidden total-subtasks completed-subtasks])]
+         (when (and subtasks (not collapsed?))
            [:div {:style {:margin-left 20}}
-            (todolist path subtasks)])]))}))
+            [todolist path subtasks]])]))}))
 
 (defn todolist [path items]
   (let [active-path @(rf/subscribe [:active-todo-path])

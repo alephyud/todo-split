@@ -48,6 +48,12 @@
          [:td [:kbd "Down"] " or " [:kbd "J"]]
          [:td "Move cursor down"]]
         [:tr
+         [:td [:kbd "Right"]]
+         [:td "Expand item"]]
+        [:tr
+         [:td [:kbd "Left"]]
+         [:td "Collapse item"]]
+        [:tr
          [:td [:kbd "U"]]
          [:td "Undo last action"]]
         [:tr

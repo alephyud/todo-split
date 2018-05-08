@@ -77,6 +77,41 @@
                                    [active-todo-path {:toggle-done true}]))))
 
 (reg-event-db
+ :expand-or-go-to-child
+ [persist-todos persist-cursor]
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
+   (let [active-todo (todos/get-by-path todos active-todo-path)]
+     (cond
+       ;; An item that has no subtasks cannot be expanded or collapsed
+       ;; (though it may make sense to switch to editing mode)
+       (empty? (::todos/subtasks active-todo)) db
+       ;; If the item is collapsed, we expand it
+       (::todos/collapsed? active-todo)
+       (assoc db ::db/todos
+              (todos/edit-todo-by-path
+               {:db todos} [active-todo-path {:collapsed? false}]))
+       ;; If it's already expanded, we go to its first child
+       :else (update db ::db/active-todo-path conj 0)))))
+
+(reg-event-db
+ :collapse-or-go-to-parent
+ [persist-todos persist-cursor]
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
+   (let [active-todo (todos/get-by-path todos active-todo-path)]
+     (cond
+       ;; If the item has subtasks and is expanded, we collapse it
+       (and (seq (::todos/subtasks active-todo))
+            (not (::todos/collapsed? active-todo)))
+       (assoc db ::db/todos
+              (todos/edit-todo-by-path
+               {:db todos} [active-todo-path {:collapsed? true}]))
+       ;; If the item doesn't have subtask or is already collapsed,
+       ;; we go to its parent (unless it's a top level item)
+       (= 1 (count active-todo-path)) db
+       :else (update db ::db/active-todo-path
+                     subvec 0 (dec (count active-todo-path)))))))
+
+(reg-event-db
  :cut-todos
  [(undoable) persist-todos persist-cursor]
  (fn [{:keys [::db/todos] :as db} [path]]
@@ -119,7 +154,8 @@
  :move-cursor-up
  [persist-cursor]
  (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
-   (assoc db ::db/active-todo-path (todos/traverse-up todos active-todo-path))))
+   (assoc db ::db/active-todo-path
+          (todos/traverse-up todos active-todo-path true))))
 
 (reg-event-db
  :move-cursor-down
@@ -127,7 +163,7 @@
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
-            (todos/traverse-down todos active-todo-path false)))))
+            (todos/traverse-down todos active-todo-path false true)))))
 
 (reg-event-fx
  :insert-above

@@ -22,6 +22,7 @@
     ::todos/subtasks
     [{::todos/uuid (uuid "6f316ccf-4b0f-476a-8ae0-f93eed4c8dd8"),
       ::todos/text "HvkofybYyFCB5P10",
+      ::todos/collapsed? true
       ::todos/subtasks
       [{::todos/uuid (uuid "3a8d7d7c-f2de-4f8c-9ea9-118f0e4157ed"),
         ::todos/text "GFghZsrZJ"}]}
@@ -34,29 +35,43 @@
       ::todos/text "tmADUe8WbFanapVOi9u2mpe5AJq7"}]}])
 
 (deftest todos-traverse-up
-  (is (= [0] (todos/traverse-up sample-todos [1])))
-  (is (= [1] (todos/traverse-up sample-todos [2]))))
+  (are [after before] (= after (todos/traverse-up
+                                sample-todos before true))
+    [0] [0]
+    [0] [1]
+    [3] [4]
+    [4] [4 0]
+    [4 0] [4 1]
+    [4 1] [4 2]
+    [4 2] [4 3])
+  (is (= [4 0 0] (todos/traverse-up sample-todos [4 1] false))))
 
 (deftest todos-traverse-down
   (testing "Traversing the tree downwards without adding new items"
-    (is (= [1] (todos/traverse-down sample-todos [0] false)))
-    (is (= [4] (todos/traverse-down sample-todos [3] false)))
-    (is (= [4 0] (todos/traverse-down sample-todos [4] false)))
-    (is (= [4 0 0] (todos/traverse-down sample-todos [4 0] false)))
-    (is (= [4 1] (todos/traverse-down sample-todos [4 0 0] false)))
-    (is (= [4 2] (todos/traverse-down sample-todos [4 1] false)))
-    (is (= [4 3] (todos/traverse-down sample-todos [4 2] false)))
-    (is (= [4 3] (todos/traverse-down sample-todos [4 3] false))))
+    (are [before after] (= after (todos/traverse-down
+                                  sample-todos before false true))
+      [0] [1]
+      [3] [4]
+      [4] [4 0]
+      [4 0] [4 1]
+      [4 0 0] [4 1]
+      [4 1] [4 2]
+      [4 2] [4 3]
+      [4 3] [4 3])
+    (is (= [4 3] (todos/traverse-down sample-todos [4 3] false true))))
+  (is (= [4 0 0] (todos/traverse-down sample-todos [4 0] false false)))
   (testing "Traversing the tree downwards with adding new items"
-    (is (= [0 0] (todos/traverse-down sample-todos [0] true)))
-    (is (= [1] (todos/traverse-down sample-todos [0 0] true)))
-    (is (= [3 0] (todos/traverse-down sample-todos [3] true)))
-    (is (= [4 0] (todos/traverse-down sample-todos [4] true)))
-    (is (= [4 0 0] (todos/traverse-down sample-todos [4 0] true)))
-    (is (= [4 0 0 0] (todos/traverse-down sample-todos [4 0 0] true)))
-    (is (= [4 1 0] (todos/traverse-down sample-todos [4 1] true)))
-    (is (= [4 2 0] (todos/traverse-down sample-todos [4 2] true)))
-    (is (= [4 3 0] (todos/traverse-down sample-todos [4 3] true)))))
+    (are [before after] (= after (todos/traverse-down
+                                  sample-todos before true true))
+      [0] [0 0]
+      [0 0] [1]
+      [3] [3 0]
+      [4] [4 0]
+      [4 0] [4 0 0]
+      [4 0 0] [4 0 0 0]
+      [4 1] [4 1 0]
+      [4 2] [4 2 0]
+      [4 3] [4 3 0])))
 
 (deftest todos-adding-and-editing
   (testing "Editing existing items"
