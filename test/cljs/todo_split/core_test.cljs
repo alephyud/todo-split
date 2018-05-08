@@ -117,3 +117,24 @@
         (is (= (inc n) (count result-branch)))
         (is (= "First step to make the slides" (::todos/text first-result)))
         (is (= (uuid "1") (::todos/uuid first-result)))))))
+
+(deftest regression-cases
+  (testing "Completion status is preserved when the list is edited"
+    (let [tasks [{::todos/text "Compound task"
+                  ::todos/uuid (uuid "0")
+                  ::todos/done? false
+                  ::todos/subtasks
+                  [{::todos/text "Done task"
+                    ::todos/uuid (uuid "1")
+                    ::todos/done? true}
+                   {::todos/text "Task being edited"
+                    ::todos/uuid (uuid "2")
+                    ::todos/done? false}]}]
+          edit-result
+          (todos/edit-todo-by-path {:db tasks} [[0 1] {:text "New text"}])
+          insert-result
+          (todos/insert-at tasks [0 1] (uuid "42"))]
+      (is (::todos/done? (-> edit-result first ::todos/subtasks first)))
+      (is (= "New text" (-> edit-result first ::todos/subtasks
+                            second ::todos/text)))
+      (is (::todos/done? (-> insert-result first ::todos/subtasks first))))))

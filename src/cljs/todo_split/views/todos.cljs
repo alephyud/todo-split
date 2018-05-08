@@ -20,11 +20,12 @@
       KeyCodes.R (rf/dispatch [:redo])
       KeyCodes.ENTER (rf/dispatch (if (.-shiftKey event)
                                     [:insert-below] [:edit-mode-on]))
+      KeyCodes.O (rf/dispatch [:insert-below])
       KeyCodes.K (rf/dispatch [:move-cursor-up])
       KeyCodes.UP (rf/dispatch [:move-cursor-up])
       KeyCodes.J (rf/dispatch [:move-cursor-down])
       KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
-      KeyCodes.H (rf/dispatch [:show-help])
+      KeyCodes.H (when-not (.-ctrlKey event) (rf/dispatch [:show-help]))
       nil)))
 
 (defn edit-mode-key-handler [{:keys [save stop]} event]

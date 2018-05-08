@@ -37,21 +37,6 @@
      [nav-link "Home" :home]
      [nav-link "Help" :help]]]])
 
-(defn about-page []
-  [:div.container.app-container
-   [:div.row
-    [:div.col-md-12
-     [:img {:src (str js/context "/img/warning_clojure.png")}]]]])
-
-(defn stub-page []
-  [:div.container.app-container
-   [:div.row>div.col-sm-12
-    [:h2.alert.alert-info "Tip: try pressing CTRL+H to open re-frame tracing menu"]]
-   (when-let [docs @(rf/subscribe [:docs])]
-     [:div.row>div.col-sm-12
-      [:div {:dangerouslySetInnerHTML
-             {:__html (md->html docs)}}]])])
-
 (def pages
   {:home #'todo-split.views.todos/todos-page
    :help #'todo-split.views.help/help-page})
@@ -67,26 +52,8 @@
 (def routes ["" {"/" :home
                  "/help" :help}])
 
-#_(reg-controller :my-controller
-                {:params (fn [{:keys [handler route-params]}]
-                           (println handler route-params))
-                 :start (fn [& args] (println args))})
-
-;; -------------------------
-;; History
-;; must be called after routes have been defined
-(defn hook-browser-navigation! []
-  (doto (History.)
-    (events/listen
-      HistoryEventType/NAVIGATE
-      (fn [event]
-        (secretary/dispatch! (.-token event))))
-    (.setEnabled true)))
-
 ;; -------------------------
 ;; Initialize app
-(defn fetch-docs! []
-  (GET "/docs" {:handler #(rf/dispatch [:set-docs %])}))
 
 (defn start-kf! []
   (kf/start! {:routes routes
@@ -98,8 +65,6 @@
 (defn init! []
   (rf/clear-subscription-cache!)
   (load-interceptors!)
-  (fetch-docs!)
-  (hook-browser-navigation!)
   (rf/dispatch [:initialize-db])
   (start-kf!))
 

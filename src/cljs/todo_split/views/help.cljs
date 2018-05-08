@@ -24,7 +24,7 @@
          [:td [:kbd "Enter"]]
          [:td "Edit the current task"]]
         [:tr
-         [:td [:kbd "Shift"] " + " [:kbd "Enter"]]
+         [:td [:kbd "Shift"] " + " [:kbd "Enter"] " or " [:kbd "O"]]
          [:td "Add and edit a new task after the current one"]]
         [:tr
          [:td [:kbd "Space"]]

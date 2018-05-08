@@ -35,11 +35,6 @@
  (fn [db [_ page]]
    (assoc db ::db/page page)))
 
-(reg-event-db
- :set-docs
- (fn [db [_ docs]]
-   (assoc db :docs docs)))
-
 (rf/reg-cofx
  :random-db
  (fn [coeffects _]
@@ -75,6 +70,7 @@
 
 (reg-event-db
  :toggle-active-todo
+ [(undoable) persist-todos persist-cursor]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (assoc db ::db/todos
           (todos/edit-todo-by-path {:db todos}
@@ -136,13 +132,13 @@
 (reg-event-fx
  :insert-below
  [(undoable) persist-todos persist-cursor (rf/inject-cofx :new-uuids)]
- (fn [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db}
-      _]
-   (let [new-path (update active-todo-path (dec (count active-todo-path)) inc)
-         new-todos (todos/insert-at todos new-path (first new-uuids))]
-     {:db (merge db {::db/todos new-todos
-                     ::db/active-todo-path new-path
-                     ::db/edit-mode? true})})))
+ (fn-traced
+  [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
+  (let [new-path (update active-todo-path (dec (count active-todo-path)) inc)
+        new-todos (todos/insert-at todos new-path (first new-uuids))]
+    {:db (merge db {::db/todos new-todos
+                    ::db/active-todo-path new-path
+                    ::db/edit-mode? true})})))
 
 (reg-event-db
  :edit-mode-on
@@ -157,8 +153,6 @@
 ;;;; Subscriptions
 
 (reg-sub :page ::db/page)
-
-(reg-sub :docs :docs)
 
 (reg-sub :todos ::db/todos)
 
