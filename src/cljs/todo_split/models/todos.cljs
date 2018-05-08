@@ -147,7 +147,3 @@
   (if (empty? subtasks)
     [(if done? 1 0) 1]
     (reduce (partial map +) (map done-status subtasks))))
-
-(defn done-percentage [todo]
-  (let [[completed total] (done-status todo)]
-    (/ completed total)))

@@ -59,11 +59,12 @@ html, body, #app {
 .todo-editable {
   padding: 0;
   position: relative;
-  i {
+  .icon {
     position: absolute;
     padding: $list-group-item-padding-y $list-group-item-padding-x;
     top: 0;
     left: 0;
+    z-index: 1;
   }
   input {
     padding: $list-group-item-padding-y $list-group-item-padding-x

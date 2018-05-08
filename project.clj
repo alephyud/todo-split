@@ -3,7 +3,7 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[cider/cider-nrepl "0.15.1"]
+  :dependencies [[cider/cider-nrepl "0.17.0"]
                  [clj-oauth "1.5.4"]
                  [clj-time "0.14.2"]
                  [cljs-ajax "0.7.3"]

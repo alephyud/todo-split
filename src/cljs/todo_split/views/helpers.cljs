@@ -48,11 +48,12 @@
       (.scrollIntoView elem align-with-top?))))
 
 (defn completion-chart [percentage]
-  (let [coords-for #(let [w (* 2 % Math/PI)]
-                      [(* 0.9 (Math/cos w)) (* 0.9 (Math/sin w))])
+  (let [radius 0.9
+        coords-for #(let [w (* 2 % Math/PI)]
+                      [(* radius (Math/cos w)) (* radius (Math/sin w))])
         large-arc? (if (> percentage 0.5) 1 0)
         path-data (-> (into ["M"] (coords-for 0))
-                      (into ["A" 1 1 0 large-arc? 1])
+                      (into ["A" radius radius 0 large-arc? 1])
                       (into (coords-for percentage))
                       (into ["L" 0 0]))]
     [:svg.icon {:view-box "-1 -1 2 2"

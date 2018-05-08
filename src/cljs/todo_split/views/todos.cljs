@@ -91,7 +91,7 @@
 (declare todolist)
 
 (defn todo-widget
-  [path {:keys [::todos/text ::todos/subtasks ::todos/done?] :as todo-item}]
+  [path todo-item]
   (r/create-class
    {:display-name "todo-list-item-widget"
     :component-will-update
@@ -99,12 +99,13 @@
       (when (= path @(rf/subscribe [:active-todo-path]))
         (vh/scroll-into-view-if-needed! (r/dom-node this))))
     :reagent-render
-    (fn [path {:keys [::todos/text ::todos/subtasks] :as todo-item}]
+    (fn [path {:keys [::todos/text ::todos/subtasks ::todos/done?]
+               :as todo-item}]
       (let [active-path @(rf/subscribe [:active-todo-path])
             active? (= path active-path)
             editable? (and active? @(rf/subscribe [:edit-mode?]))
-            done-percentage (todos/done-percentage todo-item)
-            done? (> done-percentage 0.999)
+            [completed-subtasks total-subtasks] (todos/done-status todo-item)
+            done? (= completed-subtasks total-subtasks)
             depth (count (take-while identity (map = path active-path)))]
         [:div.todo-wrapper
          {:style {:background-color (when (pos? depth) (selected-shade depth))}}
@@ -117,7 +118,7 @@
              :on-click #(do (rf/dispatch [:move-cursor-to-path path])
                             (rf/dispatch [:edit-mode-on]))})
           (if (seq subtasks)
-            (vh/completion-chart done-percentage)
+            (vh/completion-chart (/ completed-subtasks total-subtasks))
             [:i.icon
              {:class (if done? "fas fa-check text-success" "far fa-square")
               :on-click (fn [e]
