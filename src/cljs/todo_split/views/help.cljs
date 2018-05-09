@@ -15,32 +15,30 @@
    {:keydown key-handler}
    (fn []
      [:div.container.app-container
+      [:h2 "Key bindings"]
       [:table.table
-       [:thead>tr
-        [:th "Key"]
-        [:th "Action"]]
        [:tbody
         [:tr
          [:td [:kbd "Enter"]]
-         [:td "Edit the current task"]]
+         [:td "Edit the selected task"]]
         [:tr
          [:td [:kbd "Shift"] " + " [:kbd "Enter"] " or " [:kbd "O"]]
-         [:td "Add and edit a new task after the current one"]]
+         [:td "Add and edit a new task after the selected one"]]
         [:tr
          [:td [:kbd "Shift"] " + " [:kbd "O"]]
-         [:td "Add and edit a new task before the current one"]]
+         [:td "Add and edit a new task before the selected one"]]
         [:tr
          [:td [:kbd "Space"]]
-         [:td "Mark the current task done (or undone)"]]
+         [:td "Mark the selected task done (or undone)"]]
         [:tr
          [:td [:kbd "S"]]
-         [:td "Split the current task into subtasks"]]
+         [:td "Split the selected task into subtasks"]]
         [:tr
          [:td [:kbd "Shift"] " + " [:kbd "S"]]
-         [:td "Split the current task inline"]]
+         [:td "Split the selected task inline"]]
         [:tr
          [:td [:kbd "Del"], ", " [:kbd "D"] " or " [:kbd "X"]]
-         [:td "Delete the current task"]]
+         [:td "Delete the selected task"]]
         [:tr
          [:td [:kbd "Up"] " or " [:kbd "K"]]
          [:td "Move cursor up"]]

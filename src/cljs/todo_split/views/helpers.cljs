@@ -62,3 +62,9 @@
      [:path {:d (cs/join " " path-data) :fill "green"}]
      [:circle {:cx 0 :cy 0 :r 0.9 :stroke "#555" :fill "none"
                :stroke-width 0.15}]]))
+
+(defn waiting-screen [message]
+  [:div.container.waiting-screen.app-container
+   [:div.waiting-message
+    [:i.fas.fa-spinner.fa-pulse.fa-3x]
+    [:div message]]])

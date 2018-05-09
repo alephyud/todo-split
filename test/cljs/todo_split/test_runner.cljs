@@ -1,5 +1,7 @@
 (ns ^:figwheel-always todo-split.test-runner
   (:require [cljs.test :as test :include-macros true :refer [report]]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]
             [todo-split.todos-unit-tests]
             [todo-split.integration-tests]
             [figwheel.client :as fw]))
@@ -28,6 +30,8 @@
     (change-favicon-to-color "#0d0"))) ;;<<-- change color
 
 (defn runner []
+  #_(binding [s/*recursion-limit* 1]
+    (stest/check))
   (test/run-all-tests #"todo-split\..*tests?"))
 
 (fw/start {:websocket-url "ws://localhost:3449/figwheel-ws"

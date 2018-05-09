@@ -42,7 +42,7 @@
    :help #'todo-split.views.help/help-page})
 
 (defn page []
-  [:div
+  [:div.app-page 
    [navbar]
    [(#'pages (or (:handler @(rf/subscribe [:kee-frame/route])) :home))]])
 

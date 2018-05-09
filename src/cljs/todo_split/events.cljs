@@ -53,7 +53,8 @@
           (cond-> db
             (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
             (nil? (::db/todos db)) (dissoc ::db/todos)
-            (empty? (::db/todos db)) (assoc ::db/edit-mode? true)))))
+            (empty? (::db/todos db)) (assoc ::db/edit-mode? true))
+          {::db/initialized? true})))
 
 (reg-event-db
  :set-active-page
@@ -222,9 +223,9 @@
 
 ;;;; Subscriptions
 
-(reg-sub :page ::db/page)
-
 (reg-sub :todos ::db/todos)
+
+(reg-sub :db-initialized? ::db/initialized?)
 
 (reg-sub :edit-mode? ::db/edit-mode?)
 

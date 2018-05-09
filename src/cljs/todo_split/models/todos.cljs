@@ -13,23 +13,32 @@
   (s/keys :req [::uuid ::text]
           :opt [::subtasks ::done? ::collapsed?]))
 
-(s/def ::indent nat-int?)
 
+(s/def ::subtasks (s/or :empty nil?
+                        :non-empty (s/coll-of ::task :kind vector? :gen-max 3)))
+(s/def ::todolist (s/coll-of ::task :kind vector? :gen-max 7))
+
+(s/def ::indent nat-int?)
 (s/def ::flat-task
   (s/keys :req [::uuid ::text ::indent]))
 
-(s/def ::todolist (s/coll-of ::task :gen-max 10))
-(s/def ::subtasks (s/coll-of ::task :gen-max 0))
+;; Functions for working with todo items and lists
 
 (defn flat-repr
-  ([todolist] (flat-repr todolist 0))
-  ([todolist base-indent]
+  "Returns a flat representation of the (possibly nested) task list, specifying
+  the indent level of each item. Currently unused."
+  ([todos] (flat-repr todos 0))
+  ([todos base-indent]
    (reduce
     (fn [acc {:keys [::uuid ::text ::subtasks]}]
       (into (conj acc {::uuid uuid ::text text ::indent base-indent})
             (mapcat #(flat-repr [%] (inc base-indent)) subtasks)))
-    [] todolist)))
+    [] todos)))
 
+(s/fdef get-by-path
+        :args (s/cat :todos ::todolist
+                     :path (s/coll-of nat-int? :min-count 1))
+        :ret (s/nilable ::task))
 (defn get-by-path [todos path]
   (get-in todos (interpose ::subtasks path)))
 
@@ -144,10 +153,11 @@
           (split-inline todos (peek path) subtasks))
         (update-in todos key-path assoc ::subtasks subtasks)))))
 
-(defn set-undone [todo]
-  (assoc todo
-         ::done? false
-         ::subtasks (mapv set-undone (::subtasks todo))))
+(defn set-uncompleted-expanded [todo]
+  (-> todo
+      (dissoc ::done? ::expanded)
+      (update ::subtasks
+              (partial mapv set-uncompleted-expanded))))
 
 (defn done-status [{:keys [::subtasks ::done?] :as todo}]
   (if (empty? subtasks)

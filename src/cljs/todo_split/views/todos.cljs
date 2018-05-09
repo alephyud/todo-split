@@ -181,11 +181,13 @@
      "for you."]]])
 
 (defn todos-page []
-  (vh/component-with-handlers
-   {:keydown non-edit-mode-key-handler}
-   (fn []
-     (let [todos @(rf/subscribe [:todos])]
-       [:div.container.app-container
-        [todolist [] todos]
-        (when (empty? todos)
-          [initial-advice])]))))
+  (if-not @(rf/subscribe [:db-initialized?])
+    (vh/waiting-screen "Initializing list")
+    (vh/component-with-handlers
+     {:keydown non-edit-mode-key-handler}
+     (fn []
+       (let [todos @(rf/subscribe [:todos])]
+         [:div.container.app-container
+          [todolist [] todos]
+          (when (empty? todos)
+            [initial-advice])])))))
