@@ -59,4 +59,4 @@ After that, open `http://localhost:3000` for the application and
 
 ## License
 
-Copyright © 2018 FIXME
+[Eclipse Public License](LICENSE) Copyright © 2018 AI
