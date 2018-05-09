@@ -26,7 +26,7 @@ You will need [Leiningen][1] 2.0 or above installed.
 
 [1]: https://github.com/technomancy/leiningen
 
-## Running
+## Development Setup
 
 To start a development Figwheel server for the application, run:
 
@@ -35,6 +35,18 @@ To start a development Figwheel server for the application, run:
 It also includes the web server.
 After that, open `http://localhost:3000` for the application and
 `http://localhost:3000/test` for frontend tests.
+
+Styles and non-CLJS scripts are built using [Gulp][1]. To start Gulp,
+install the NPM dependencies:
+
+    npm install --dev
+    npm install gulp -g
+
+and then run Gulp:
+
+    gulp watch
+
+[1]: https://github.com/gulpjs/gulp
 
 ## To-do list :)
 

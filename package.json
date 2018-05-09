@@ -1,15 +1,18 @@
 {
   "name": "todo-split-asset-pipeline",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Asset pipeline for Todo Split",
   "keywords": [
     "todolist"
   ],
-  "author": "alex",
-  "license": "ISC",
-  "repository": "https://github.com/alephyud/todosplit",
+  "author": "AI",
+  "license": "EPL 2.0",
+  "repository": "https://github.com/alephyud/todo-split",
   "dependencies": {
     "bootstrap": "^4.0.0",
+    "jquery": "^3.3.1",
+  },
+  "devDependencies": {
     "browser-sync": "^2.23.6",
     "browserify": "^16.1.1",
     "coffeeify": "^3.0.1",
@@ -22,19 +25,10 @@
     "gulp-minify-css": "^1.2.4",
     "gulp-rename": "^1.2.2",
     "gulp-sass": "^3.1.0",
-    "jquery": "^3.3.1",
     "popper.js": "^1.14.1",
     "sass-loader": "^6.0.7",
     "style-loader": "^0.20.3",
     "uglifyify": "^4.0.5",
     "vinyl-source-stream": "^2.0.0"
-  },
-  "devDependencies": {
-    "webpack": "^4.1.1",
-    "webpack-cli": "^2.0.12"
-  },
-  "scripts": {
-    "build": "webpack --mode development",
-    "watch": "webpack --watch"
   }
 }
