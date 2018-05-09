@@ -1,11 +1,7 @@
-(ns todo-split.core-test
+(ns todo-split.todos-unit-tests
   (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
             [pjstadig.humane-test-output]
-            [reagent.core :as reagent :refer [atom]]
             [todo-split.models.todos :as todos]))
-
-(deftest wtf-test
-  (is (= 1 1)))
 
 (def sample-todos
   [{::todos/uuid (uuid "bb2a02a3-b678-4997-bc49-a5a12c4ac9dc"),

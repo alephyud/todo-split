@@ -78,6 +78,7 @@
   "Replaces the text using the selected index path"
   [{todos :db :keys [new-uuids] :as cofx}
    [[index & rest-path] {:keys [text done? toggle-done collapsed?] :as params}]]
+  {:pre [(map? params)]}
   (if (empty? rest-path)
     (update (or todos []) index
             #(merge {::uuid (first new-uuids)} %

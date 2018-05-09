@@ -1,6 +1,7 @@
 (ns ^:figwheel-always todo-split.test-runner
   (:require [cljs.test :as test :include-macros true :refer [report]]
-            [todo-split.core-test]
+            [todo-split.todos-unit-tests]
+            [todo-split.integration-tests]
             [figwheel.client :as fw]))
 
 (enable-console-print!)
@@ -27,7 +28,7 @@
     (change-favicon-to-color "#0d0"))) ;;<<-- change color
 
 (defn runner []
-  (test/run-tests 'todo-split.core-test))
+  (test/run-all-tests #"todo-split\..*tests?"))
 
 (fw/start {:websocket-url "ws://localhost:3449/figwheel-ws"
            :build-id "test"

@@ -124,6 +124,7 @@
                                  [com.cemerick/piggieback "0.2.2"]
                                  [day8.re-frame/re-frame-10x "0.3.3"]
                                  [day8.re-frame/tracing "0.5.1"]
+                                 [day8.re-frame/test "0.1.5"]
                                  [doo "0.1.8"]
                                  [figwheel-sidecar "0.5.16-SNAPSHOT"]
                                  [pjstadig/humane-test-output "0.8.3"]

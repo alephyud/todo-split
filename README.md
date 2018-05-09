@@ -31,15 +31,15 @@ After that, open `http://localhost:3000` for the application and
 * ~~When the last task in list is removed, move cursor upwards~~
 * ~~Local storage~~
 * ~~Help page~~
-* Instructions on generating new page and help
+* ~~Instructions on generating new page and help~~
+* ~~Expanding and collapsing items~~
+* ~~Integration tests~~
 * First deployment
-* Expanding and collapsing items
 * Expanded to-do item format (?)
     - timestamps
     - notes
     - images
     - attached files
-* Integration tests
 * Backend
 
 ## License
