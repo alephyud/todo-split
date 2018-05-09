@@ -11,8 +11,8 @@
   (GET "/test" [] (layout/render "test.html")))
 
 (defroutes home-routes
-  (GET "/" []
-       (home-page))
+  (GET "/" [] (home-page))
+  (GET "/help" [] (home-page))
   (GET "/docs" []
        (-> (response/ok (-> "docs/docs.md" io/resource slurp))
            (response/header "Content-Type" "text/plain; charset=utf-8")))
