@@ -152,9 +152,9 @@
                                       [:edit-todo-by-path path {:text %}]))
                          :on-stop #(rf/dispatch [:edit-mode-off])}]
             [:div.todo-text (str text " ")])
-          (when (and subtasks collapsed?)
+          (when (and (seq subtasks) collapsed?)
             [subtasks-hidden total-subtasks completed-subtasks])]
-         (when (and subtasks (not collapsed?))
+         (when (and (seq subtasks) (not collapsed?))
            [:div {:style {:margin-left 20}}
             [todolist path subtasks]])]))}))
 

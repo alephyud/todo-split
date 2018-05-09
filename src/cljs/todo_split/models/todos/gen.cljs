@@ -75,7 +75,7 @@
 
 (s/def ::location-resource
   (s/spec string? :gen (join-str-gen (s/cat :resource #{"tickets to"
-                                                        "meeting room in"
+                                                        "meeting rooms in"
                                                         "meetings in"}
                                             :location ::locations))))
 
