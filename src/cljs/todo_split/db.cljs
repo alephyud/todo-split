@@ -18,10 +18,11 @@
 (defn valid-path? [todos [index & rest-path]]
   (and (<= index (count todos))
        (or (empty? rest-path)
-           (valid-path? (get-in todos [index ::todos/subtasks]) rest-path))))
+           (valid-path? (get-in todos [index ::todos/subtasks 1]) rest-path))))
 
 (s/def ::db
-  (s/and (s/keys :req [::todos ::active-todo-path ::edit-mode? ::initialized?])
+  (s/and (s/keys :req [::todos ::active-todo-path]
+                 :opt [::edit-mode? ::initialized?])
          #(valid-path? (::todos %) (::active-todo-path %))))
 
 ;; Random task list generation.
@@ -31,7 +32,7 @@
 ;; have up to 3 subtasks, with no nesting beyond that.
 
 (s/def ::sample-todolist
-  (s/coll-of ::todos/sample-task :kind vector? :min-count 5 :max-count 7))
+  (s/coll-of ::todos/task :kind vector? :min-count 5 :max-count 7))
 
 (defn generate-random-db []
   {::todos (mapv todos/set-uncompleted-expanded

@@ -1,7 +1,9 @@
 (ns todo-split.todos-unit-tests
   (:require [cljs.test :refer-macros [is are deftest testing use-fixtures]]
             [pjstadig.humane-test-output]
-            [todo-split.models.todos :as todos]))
+            [clojure.spec.alpha :as s]
+            [todo-split.models.todos :as todos]
+            [todo-split.db :as db]))
 
 (def sample-todos
   [{::todos/uuid (uuid "bb2a02a3-b678-4997-bc49-a5a12c4ac9dc"),
@@ -30,6 +32,11 @@
      {::todos/uuid (uuid "d06715f7-da73-44c1-84a7-e9dedcf5826e"),
       ::todos/text "tmADUe8WbFanapVOi9u2mpe5AJq7"}]}])
 
+(deftest todos-basic
+  (is (s/valid? ::db/db {::db/todos sample-todos ::db/active-todo-path [0]}))
+  (is (s/valid? ::db/db {::db/todos sample-todos ::db/active-todo-path [5]}))
+  (is (s/valid? ::db/db {::db/todos sample-todos ::db/active-todo-path [4 3]})))
+
 (deftest todos-traverse-up
   (are [after before] (= after (todos/traverse-up
                                 sample-todos before true))
@@ -45,7 +52,7 @@
 (deftest todos-traverse-down
   (testing "Traversing the tree downwards without adding new items"
     (are [before after] (= after (todos/traverse-down
-                                  sample-todos before false true))
+                                  sample-todos before 0 true))
       [0] [1]
       [3] [4]
       [4] [4 0]
@@ -53,21 +60,22 @@
       [4 0 0] [4 1]
       [4 1] [4 2]
       [4 2] [4 3]
-      [4 3] [4 3])
-    (is (= [4 3] (todos/traverse-down sample-todos [4 3] false true))))
+      [4 3] [4 3]))
   (is (= [4 0 0] (todos/traverse-down sample-todos [4 0] false false)))
+  (is (= [1] (todos/traverse-down sample-todos [0] 1 false)))
+  (is (= [5] (todos/traverse-down sample-todos [4 3] 1 false)))
   (testing "Traversing the tree downwards with adding new items"
     (are [before after] (= after (todos/traverse-down
-                                  sample-todos before true true))
-      [0] [0 0]
+                                  sample-todos before 5 true))
+      [0] [1]
       [0 0] [1]
-      [3] [3 0]
+      [3] [4]
       [4] [4 0]
-      [4 0] [4 0 0]
-      [4 0 0] [4 0 0 0]
-      [4 1] [4 1 0]
-      [4 2] [4 2 0]
-      [4 3] [4 3 0])))
+      [4 0] [4 1]
+      [4 0 0] [4 0 1]
+      [4 1] [4 2]
+      [4 2] [4 3]
+      [4 3] [4 4])))
 
 (deftest todos-adding-and-editing
   (testing "Editing existing items"

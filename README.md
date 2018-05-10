@@ -6,9 +6,9 @@ This is an example Clojure / ClojureScript todo list app, built using
 [Reagent][1] / [re-frame][2] / [Kee-Frame][3].
 
 To make things more interesting, you can split any task into subtasks
-by pressing the `S` key once you run the app.
+by pressing the <kbd>S</kbd> key once you run the app.
 You can also have a set of tasks generated for you
-using Clojure Spec generators by pressing the `G` key.
+using Clojure Spec generators by pressing the <kbd>G</kbd> key.
 
 The changes are persisted in the browser's local storage using
 [re-frame-storage][4]
@@ -22,7 +22,9 @@ and have undo / redo enabled using [re-frame-undo][5].
 
 ## Prerequisites
 
-You will need [Leiningen][1] 2.0 or above installed.
+You will need [Leiningen][1] 2.0 or above installed. If you want to change
+styles and non-CLJS scripts (including the Bootstrap build),
+you will also need NPM.
 
 [1]: https://github.com/technomancy/leiningen
 

@@ -47,7 +47,10 @@
     path
     (last-child-path (peek subtasks) (conj path (dec (count subtasks))))))
 
-(defn traverse-up [todos path skip-collapsed?]
+(defn traverse-up
+  "Returns the path in the `todos` vector preceding to given `path`.
+  If `skip-collapsed?` is true, skips over the collapsed subtasks."
+  [todos path skip-collapsed?]
   (cond
     (= path [0]) path
     (= (peek path) 0) (subvec path 0 (dec (count path)))
@@ -56,17 +59,24 @@
             (last-child-path (get-by-path todos dec-path) dec-path
                              skip-collapsed?))))
 
-(defn traverse-down [todos path create-new? skip-collapsed?]
-  (let [new-item-adjustment (if create-new? 1 0)
-        [subtask-counts inner-subtasks inner-collapsed?]
+(defn traverse-down
+  "Returns the path in the `todos` vector after given `path`.
+  If `skip-collapsed?` is true, skips over the collapsed subtasks.
+  For the levels of nesting less than the `append-depth`, returns a path for
+  a not yet existing item in the end of the subtask list that allows it to be
+  added / edited. If `append-depth` is 1, only new top level tasks will be
+  added this way. If `append-depth` is 0, new tasks won't be added even on
+  the top level."
+  [todos path append-depth skip-collapsed?]
+  (let [[subtask-counts inner-subtasks inner-collapsed?]
         (reduce (fn [[acc todos] index]
                   (let [{:keys [::subtasks ::collapsed?]} (get todos index)]
-                    [(conj acc (+ (count todos) new-item-adjustment))
+                    [(conj acc (+ (count todos)
+                                  (if (< (count acc) append-depth) 1 0)))
                      subtasks collapsed?]))
                 [[] todos] path)]
-    (if (or (and (pos? (count inner-subtasks))
-                 (not (and inner-collapsed? skip-collapsed?)))
-            (and create-new? (< (peek path) (dec (peek subtask-counts)))))
+    (if (and (pos? (count inner-subtasks))
+             (not (and inner-collapsed? skip-collapsed?)))
       (conj path 0)
       (loop [depth (dec (count path))
              new-path path]
