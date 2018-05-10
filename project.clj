@@ -28,7 +28,6 @@
                  [org.clojure/tools.logging "0.4.0"]
                  [org.clojure/tools.reader "1.2.2"]
                  [org.webjars.bower/tether "1.4.3"]
-                 [org.webjars/bootstrap "4.0.0"]
                  [org.webjars/font-awesome "5.0.6"]
                  [re-frame "0.10.5"]
                  [day8.re-frame/undo "0.3.2"]
@@ -113,7 +112,7 @@
              :prep-tasks ["compile" ["cljsbuild" "once" "min"]]
              :dependencies [[day8.re-frame/tracing-stubs "0.5.1"]]
              :aot :all
-             :uberjar-name "todo-split.jar"
+             :uberjar-name "standalone.jar"
              :source-paths ["env/prod/clj"]
              :resource-paths ["env/prod/resources"]}
 

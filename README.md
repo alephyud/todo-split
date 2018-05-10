@@ -5,10 +5,15 @@ generated using Luminus version "2.9.12.29"
 This is an example Clojure / ClojureScript todo list app, built using
 [Reagent][1] / [re-frame][2] / [Kee-Frame][3].
 
-To make things more interesting, you can split any task into subtasks
-by pressing the <kbd>S</kbd> key once you run the app.
+You can view the live demo of the application
+[here](https://todosplit.mydemoapps.net/).
+
+Once you open the app, press <kbd>H</kbd> or click 'Help' for a
+list of key bindings. You can split any task into subtasks
+by pressing the <kbd>S</kbd> key.
 You can also have a set of tasks generated for you
 using Clojure Spec generators by pressing the <kbd>G</kbd> key.
+
 
 The changes are persisted in the browser's local storage using
 [re-frame-storage][4]
