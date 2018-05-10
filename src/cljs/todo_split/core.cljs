@@ -26,16 +26,17 @@
 (defn navbar []
   [:nav.navbar.navbar-dark.bg-primary.navbar-expand-md
    {:role "navigation"}
-   [:button.navbar-toggler.hidden-sm-up
-    {:type "button"
-     :data-toggle "collapse"
-     :data-target "#collapsing-navbar"}
-    [:span.navbar-toggler-icon]]
-   [:a.navbar-brand {:href "#/"} "todo-split"]
-   [:div#collapsing-navbar.collapse.navbar-collapse
-    [:ul.nav.navbar-nav.mr-auto
-     [nav-link "Home" :home]
-     [nav-link "Help" :help]]]])
+   [:div.container
+    [:button.navbar-toggler.hidden-sm-up
+     {:type "button"
+      :data-toggle "collapse"
+      :data-target "#collapsing-navbar"}
+     [:span.navbar-toggler-icon]]
+    [:a.navbar-brand {:href "#/"} "todo-split"]
+    [:div#collapsing-navbar.collapse.navbar-collapse
+     [:ul.nav.navbar-nav.mr-auto
+      [nav-link "Home" :home]
+      [nav-link "Help" :help]]]]])
 
 (def pages
   {:home #'todo-split.views.todos/todos-page

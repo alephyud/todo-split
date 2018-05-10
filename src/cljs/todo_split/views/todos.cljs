@@ -32,8 +32,8 @@
             KeyCodes.O (rf/dispatch [:insert-below])
             KeyCodes.K (rf/dispatch [:move-cursor-up])
             KeyCodes.UP (rf/dispatch [:move-cursor-up])
-            KeyCodes.J (rf/dispatch [:move-cursor-down])
-            KeyCodes.DOWN (rf/dispatch [:move-cursor-down])
+            KeyCodes.J (rf/dispatch [:move-cursor-down 0])
+            KeyCodes.DOWN (rf/dispatch [:move-cursor-down 0])
             KeyCodes.LEFT (rf/dispatch [:collapse-or-go-to-parent])
             KeyCodes.RIGHT (rf/dispatch [:expand-or-go-to-child])
             KeyCodes.H (rf/dispatch [:show-help])
@@ -45,10 +45,10 @@
   (condp = (.-which event)
     KeyCodes.ENTER (do (save)
                        (rf/dispatch (if (.-shiftKey event)
-                                      [:insert-below] [:move-cursor-down])))
+                                      [:insert-below] [:move-cursor-down 1])))
     KeyCodes.ESC (do (save) (stop))
     KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
-    KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down]))
+    KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down 1]))
     nil))
 
 (defn todo-input [{:keys [text on-save on-stop]}]

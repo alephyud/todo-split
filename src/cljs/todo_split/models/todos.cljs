@@ -165,7 +165,7 @@
 
 (defn set-uncompleted-expanded [todo]
   (-> todo
-      (dissoc ::done? ::expanded)
+      (dissoc ::done? ::collapsed?)
       (update ::subtasks
               (partial mapv set-uncompleted-expanded))))
 

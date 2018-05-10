@@ -1,7 +1,7 @@
 (defproject todo-split "0.1.0-SNAPSHOT"
 
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "A todolist app based on kee-frame."
+  :url "https://github.com/alephyud/todo-split"
 
   :dependencies [[cider/cider-nrepl "0.17.0"]
                  [clj-oauth "1.5.4"]

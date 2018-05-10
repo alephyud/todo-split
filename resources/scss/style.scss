@@ -21,7 +21,12 @@ html, body, #app, .app-page {
 }
 
 .app-container {
-  margin: 15px 0;
+  margin: 15px;
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .todo-wrapper {

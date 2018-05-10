@@ -186,10 +186,10 @@
 (reg-event-db
  :move-cursor-down
  [persist-keys]
- (fn [{:keys [::db/active-todo-path ::db/todos] :as db} _]
+ (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [append-depth]]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
-            (todos/traverse-down todos active-todo-path 1 true)))))
+            (todos/traverse-down todos active-todo-path append-depth true)))))
 
 (reg-event-fx
  :insert-above
