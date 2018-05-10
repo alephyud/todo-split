@@ -16,6 +16,8 @@
    (fn []
      [:div.container.app-container
       [:h2 "Key bindings"]
+      [:p "You should use this app from a desktop / laptop to access all"
+          "of its functions. Mobile controls are not yet implemented."]
       [:table.table
        [:tbody
         [:tr
