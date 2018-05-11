@@ -5,7 +5,6 @@
             [clojure.tools.logging :as log]
             [todo-split.layout :refer [*app-context* error-page]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
-            [ring.middleware.webjars :refer [wrap-webjars]]
             [muuntaja.core :as muuntaja]
             [muuntaja.format.json :refer [json-format]]
             [muuntaja.format.transit :as transit-format]
@@ -86,7 +85,6 @@
 
 (defn wrap-base [handler]
   (-> ((:middleware defaults) handler)
-      wrap-webjars
       wrap-flash
       (wrap-session {:cookie-attrs {:http-only true}})
       (wrap-defaults

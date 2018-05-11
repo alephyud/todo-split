@@ -16,6 +16,10 @@ gulp.task 'css', ->
   .pipe gulp.dest 'resources/public/css'
   .pipe browserSync.stream()
 
+gulp.task 'fonts', ->
+  gulp.src 'node_modules/@fortawesome/fontawesome-free-webfonts/webfonts/**.*'
+    .pipe gulp.dest 'resources/public/webfonts'
+
 gulp.task 'js', ->
   browserify
     entries: ['./resources/js/main.coffee']
@@ -31,4 +35,4 @@ gulp.task 'watch', ->
   gulp.watch './resources/scss/*', ['css']
   gulp.watch './resources/js/*', ['js']
 
-gulp.task 'default', ['css', 'js']
+gulp.task 'default', ['css', 'js', 'fonts']

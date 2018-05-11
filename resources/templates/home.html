@@ -4,6 +4,7 @@
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Welcome to todo-split</title>
+      {% style "/css/styles.min.css" %}
   </head>
   <body>
     <div id="app">
@@ -17,15 +18,8 @@
     <a href="https://github.com/alephyud/todo-split">
       <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
     </a>
-    <!-- scripts and styles -->
-    {% style "/assets/font-awesome/web-fonts-with-css/css/fontawesome-all.min.css" %}
-    {% style "/css/styles.min.css" %}
-
     {% script "/js/scripts.min.js" %}
-    {% script "/assets/font-awesome/svg-with-js/js/fontawesome.min.js" %}
-    {% script "/assets/tether/dist/js/tether.min.js" %}
     {{custom-snippets|safe}}
-
     <script type="text/javascript">
         var context = "{{servlet-context}}";
         var csrfToken = "{{csrf-token}}";
