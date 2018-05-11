@@ -1,7 +1,5 @@
 # todo-split
 
-generated using Luminus version "2.9.12.29"
-
 This is an example Clojure / ClojureScript todo list app, built using
 [Reagent][1] / [re-frame][2] / [Kee-Frame][3].
 
@@ -57,24 +55,10 @@ and then run Gulp:
 
 ## To-do list :)
 
-* ~~Editing and selecting states (like in Jupyter)~~
-* ~~Marking tasks as done~~
-* ~~Splitting tasks~~
-* ~~When the last task in list is removed, move cursor upwards~~
-* ~~Local storage~~
-* ~~Help page~~
-* ~~Instructions on generating new page and help~~
-* ~~Expanding and collapsing items~~
-* ~~Integration tests~~
-* First deployment
 * Hash-based navigation
 * State on backend and sync
 * DB-backed backend and accounts
-* Expanded to-do item format (?)
-    - timestamps
-    - notes
-    - images
-    - attached files
+* Expanded to-do item format (timestamps, notes, images, attachments)
 
 ## License
 
