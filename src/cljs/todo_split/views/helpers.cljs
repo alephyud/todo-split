@@ -56,9 +56,9 @@
                       (into ["A" radius radius 0 large-arc? 1])
                       (into (coords-for percentage))
                       (into ["L" 0 0]))]
-    [:svg.icon {:view-box "-1 -1 2 2"
-                :style {:transform "rotate(-90deg)"}
-                :width "1rem"}
+    [:svg {:view-box "-1 -1 2 2"
+           :style {:transform "rotate(-90deg)"}
+           :width "1rem"}
      [:path {:d (cs/join " " path-data) :fill "green"}]
      [:circle {:cx 0 :cy 0 :r 0.9 :stroke "#555" :fill "none"
                :stroke-width 0.15}]]))

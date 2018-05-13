@@ -6,12 +6,13 @@
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
 (s/def ::text (s/spec string? :gen todos.gen/task))
-(s/def ::done? (s/spec boolean?))
 (s/def ::collapsed? (s/spec boolean?))
+(s/def ::created-at inst?)
+(s/def ::done-at inst?)
 
 (s/def ::task
-  (s/keys :req [::uuid ::text]
-          :opt [::subtasks ::done? ::collapsed?]))
+  (s/keys :req [::uuid ::text ::created-at]
+          :opt [::subtasks ::done-at ::collapsed?]))
 
 
 (s/def ::subtasks (s/or :empty nil?
@@ -86,24 +87,26 @@
              (get subtask-counts depth)) (update new-path depth inc)
           :else (recur (dec depth) (subvec new-path 0 depth)))))))
 
-(defn insert-at [todos [index & rest-path] uuid]
+(defn insert-at [todos [index & rest-path] uuid now]
   (if (seq rest-path)
-    (update-in todos [index ::subtasks] insert-at rest-path uuid)
+    (update-in todos [index ::subtasks] insert-at rest-path uuid now)
     (-> (subvec todos 0 index)
-        (conj {::text "" ::uuid uuid})
+        (conj {::text "" ::uuid uuid ::created-at now})
         (into (subvec todos index)))))
 
 (defn edit-todo-by-path
   "Replaces the text using the selected index path"
-  [{todos :db :keys [new-uuids] :as cofx}
+  [{todos :db :keys [new-uuids now] :as cofx}
    [[index & rest-path] {:keys [text done? toggle-done collapsed?] :as params}]]
   {:pre [(map? params)]}
   (if (empty? rest-path)
     (update (or todos []) index
-            #(merge {::uuid (first new-uuids)} %
+            #(merge {::uuid (first new-uuids)
+                     ::created-at now} %
                     (when text {::text text})
-                    (when (some? done?) {::done? done?})
-                    (when toggle-done {::done? (not (::done? %))})
+                    (when done? {::done-at now})
+                    (when (= false done?) {::done-at nil})
+                    (when toggle-done {::done-at (when-not (::done-at %) now)})
                     (when (some? collapsed?) {::collapsed? collapsed?})))
     (assoc-in todos [index ::subtasks]
               (edit-todo-by-path (update cofx :db get-in [index ::subtasks])
@@ -133,11 +136,13 @@
 (defn first-step-text [text]
   (str "First step to " (cs/lower-case (first text)) (subs text 1)))
 
-(defn split-subtasks [{:keys [::text] :as todo} uuids]
+(defn split-subtasks [{:keys [::text] :as todo} uuids now]
   (when (splittable? todo)
     [{::uuid (first uuids)
+      ::created-at now
       ::text (first-step-text text)}
      {::uuid (second uuids)
+      ::created-at now
       ::text "..."}]))
 
 (defn split-inline [todos index subtasks]
@@ -153,15 +158,26 @@
 
   If the task is splittable, returns the resulting todos structure. Otherwise,
   returns nil."
-  [todos path uuids inline?]
+  [todos path uuids now inline?]
+  {:pre [(every? uuid? uuids) (inst? now) (boolean? inline?)]}
   (let [key-path (interpose ::subtasks path)
         todo (get-in todos key-path)]
-    (when-let [subtasks (split-subtasks todo uuids)]
+    (when-let [subtasks (split-subtasks todo uuids now)]
       (if inline?
         (if-let [key-path (butlast key-path)]
           (update-in todos key-path split-inline (peek path) subtasks)
           (split-inline todos (peek path) subtasks))
         (update-in todos key-path assoc ::subtasks subtasks)))))
+
+(defn done-status
+  "Returns the total number of completed leaf subtasks and total number of
+  leaf subtasks (including the task itself, if it has no subtasks)."
+  [{:keys [::subtasks ::done-at] :as todo}]
+  (if (empty? subtasks)
+    [(if done-at 1 0) 1]
+    (reduce (partial map +) (map done-status subtasks))))
+
+;; Service functions
 
 (defn set-uncompleted-expanded [todo]
   (-> todo
@@ -169,7 +185,17 @@
       (update ::subtasks
               (partial mapv set-uncompleted-expanded))))
 
-(defn done-status [{:keys [::subtasks ::done?] :as todo}]
-  (if (empty? subtasks)
-    [(if done? 1 0) 1]
-    (reduce (partial map +) (map done-status subtasks))))
+(defn attach-timestamps
+  "Adds `now` as `::created-at` and, if applicable, as `::done-at` to the
+  task and all of its subtasks recursively."
+  [todo now]
+  (merge (dissoc todo ::done)
+         (when-not (::created-at todo) {::created-at now})
+         (when (::done? todo) {::done-at now})
+         (when-let [subtasks (seq (::subtasks todo))]
+           {::subtasks (mapv #(attach-timestamps % now) subtasks)})))
+
+(defn attach-timestamps-if-none
+  [todos now]
+  (when (seq todos)
+    (mapv #(attach-timestamps % now) todos)))

@@ -5,31 +5,43 @@
             [todo-split.models.todos :as todos]
             [todo-split.db :as db]))
 
+(def sample-time (js/Date. "2018-05-13"))
+
 (def sample-todos
   [{::todos/uuid (uuid "bb2a02a3-b678-4997-bc49-a5a12c4ac9dc"),
+    ::todos/created-at sample-time
     ::todos/text "Feed the cat"}
    {::todos/uuid (uuid "9caa67c5-f31c-4c01-96e4-6264199540b6"),
+    ::todos/created-at sample-time
     ::todos/text "p1DdP3kC78kn8Oo4QT"
-    ::todos/done? true}
+    ::todos/done-at (js/Date. "2018-05-14")}
    {::todos/uuid (uuid "1545da52-1e51-4e05-b1f9-c170dcdaf80b"),
+    ::todos/created-at sample-time
     ::todos/text "Yb9Mhq875zE8ncctO90zleULoRWA"}
    {::todos/uuid (uuid "c677ef34-1920-4592-a34f-0914dc841f79"),
+    ::todos/created-at sample-time
     ::todos/text "Y5J17wW3"}
    {::todos/uuid (uuid "fb8bedd9-7bdb-431f-a36c-9f995038c303"),
+    ::todos/created-at sample-time
     ::todos/text "7Z0fs480Q1gsTqeG7K2Fsa",
     ::todos/subtasks
     [{::todos/uuid (uuid "6f316ccf-4b0f-476a-8ae0-f93eed4c8dd8"),
+      ::todos/created-at sample-time
       ::todos/text "HvkofybYyFCB5P10",
       ::todos/collapsed? true
       ::todos/subtasks
       [{::todos/uuid (uuid "3a8d7d7c-f2de-4f8c-9ea9-118f0e4157ed"),
+        ::todos/created-at sample-time
         ::todos/text "GFghZsrZJ"}]}
      {::todos/uuid (uuid "e107f1d8-94db-4282-b9b9-1b33ffe5e439"),
+      ::todos/created-at sample-time
       ::todos/text "3nD9JRqW70JD3",
       ::todos/subtasks []}
      {::todos/uuid (uuid "fff52503-ff66-4dc5-912a-42a5f6680d11"),
+      ::todos/created-at sample-time
       ::todos/text "make the slides"}
      {::todos/uuid (uuid "d06715f7-da73-44c1-84a7-e9dedcf5826e"),
+      ::todos/created-at sample-time
       ::todos/text "tmADUe8WbFanapVOi9u2mpe5AJq7"}]}])
 
 (deftest todos-basic
@@ -83,23 +95,23 @@
                           (todos/edit-todo-by-path [[0] {:text "New text"}])
                           first ::todos/text))))
   (testing "Marking items as done or not done"
-    (is (= true (-> {:db sample-todos}
-                    (todos/edit-todo-by-path [[0] {:done? true}])
-                    first ::todos/done?)))
-    (is (= false (-> {:db sample-todos}
-                     (todos/edit-todo-by-path [[1] {:done? false}])
-                     second ::todos/done?))))
+    (is (= sample-time (-> {:db sample-todos :now sample-time}
+                           (todos/edit-todo-by-path [[0] {:done? true}])
+                           first ::todos/done-at)))
+    (is (nil? (-> {:db sample-todos}
+                  (todos/edit-todo-by-path [[1] {:done? false}])
+                  second ::todos/done-at))))
   (testing "Adding new sub-items"
     (is (= "New text" (-> {:db sample-todos :new-uuids [(uuid "1")]}
                           (todos/edit-todo-by-path [[0 0] {:text "New text"}])
                           first ::todos/subtasks first ::todos/text))))
   (testing "Inserting new items"
     (let [n (-> sample-todos count)
-          result (todos/insert-at sample-todos [3] (uuid "42"))]
+          result (todos/insert-at sample-todos [3] (uuid "42") sample-time)]
       (is (= (inc n) (count result)))
       (is (= (uuid "42") (::todos/uuid (get result 3)))))
     (let [n (-> sample-todos (get 4) ::todos/subtasks count)
-          result (todos/insert-at sample-todos [4 2] (uuid "42"))
+          result (todos/insert-at sample-todos [4 2] (uuid "42") sample-time)
           result-branch (-> result (get 4) ::todos/subtasks)]
       (is (= (inc n) (count result-branch)))
       (is (= (uuid "42") (::todos/uuid (get result-branch 2)))))))
@@ -119,18 +131,18 @@
 (deftest todos-splitting
   (let [uuids [(uuid "1") (uuid "2")]]
     (testing "Tree splitting"
-      (let [result (todos/split-todo sample-todos [0] uuids false)
+      (let [result (todos/split-todo sample-todos [0] uuids sample-time false)
             first-result (-> result first ::todos/subtasks first)]
         (is (= 2 (count (::todos/subtasks (first result)))))
         (is (= "First step to feed the cat" (::todos/text first-result)))
         (is (= (uuid "1") (::todos/uuid first-result)))))
     (testing "Inline splitting"
       (let [n (count sample-todos)
-            result (todos/split-todo sample-todos [0] uuids true)]
+            result (todos/split-todo sample-todos [0] uuids sample-time true)]
         (is (= (inc n) (count result)))
         (is (= "First step to feed the cat" (-> result first ::todos/text))))
       (let [n (-> sample-todos (get 4) ::todos/subtasks count)
-            result (todos/split-todo sample-todos [4 2] uuids true)
+            result (todos/split-todo sample-todos [4 2] uuids sample-time true)
             result-branch (-> result (get 4) ::todos/subtasks)
             first-result (get result-branch 2)]
         (is (= (inc n) (count result-branch)))
@@ -145,15 +157,17 @@
                   ::todos/subtasks
                   [{::todos/text "Done task"
                     ::todos/uuid (uuid "1")
-                    ::todos/done? true}
+                    ::todos/done-at sample-time}
                    {::todos/text "Task being edited"
                     ::todos/uuid (uuid "2")
                     ::todos/done? false}]}]
           edit-result
           (todos/edit-todo-by-path {:db tasks} [[0 1] {:text "New text"}])
           insert-result
-          (todos/insert-at tasks [0 1] (uuid "42"))]
-      (is (::todos/done? (-> edit-result first ::todos/subtasks first)))
+          (todos/insert-at tasks [0 1] (uuid "42") sample-time)]
+      (is (= (::todos/done-at (-> edit-result first ::todos/subtasks first))
+             sample-time))
       (is (= "New text" (-> edit-result first ::todos/subtasks
                             second ::todos/text)))
-      (is (::todos/done? (-> insert-result first ::todos/subtasks first))))))
+      (is (= (::todos/done-at (-> insert-result first ::todos/subtasks first))
+             sample-time)))))

@@ -114,7 +114,7 @@
       (when (= path @(rf/subscribe [:active-todo-path]))
         (vh/scroll-into-view-if-needed! (r/dom-node this))))
     :reagent-render
-    (fn [path {:keys [::todos/text ::todos/subtasks ::todos/done?
+    (fn [path {:keys [::todos/text ::todos/subtasks
                       ::todos/collapsed?] :as todo-item}]
       (let [active-path @(rf/subscribe [:active-todo-path])
             active? (= path active-path)
@@ -125,6 +125,7 @@
         [:div.todo-wrapper
          {:style {:background-color (when (pos? depth) (selected-shade depth))}}
          [:div.todo-list-item
+          ;; Class and handlers of the task's widget.
           (if editable?
             {:class "todo-editable"}
             {:class (->> [(when active? "todo-active")
@@ -132,14 +133,22 @@
                          (keep identity) (cs/join " "))
              :on-click #(do (rf/dispatch [:move-cursor-to-path path])
                             (rf/dispatch [:edit-mode-on]))})
+          ;; Task's status icon and its click handlers.
           (if (seq subtasks)
-            (vh/completion-chart (/ completed-subtasks total-subtasks))
+            [:span.icon
+             {:on-click (fn [e]
+                          (rf/dispatch
+                           [:edit-todo-by-path path
+                            {:collapsed? (not collapsed?)}])
+                          (.stopPropagation e))}
+             (vh/completion-chart (/ completed-subtasks total-subtasks))]
             [:i.icon
              {:class (if done? "fas fa-check text-success" "far fa-square")
               :on-click (fn [e]
                           (rf/dispatch
                            [:edit-todo-by-path path {:done? (not done?)}])
                           (.stopPropagation e))}])
+          ;; Task's text.
           (if editable?
             ^{:key path}
             [todo-input {:text text

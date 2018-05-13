@@ -1,5 +1,6 @@
 (ns todo-split.events
   (:require [todo-split.db :as db]
+            [clojure.string :as cs]
             [com.rpl.specter :as specter]
             [re-frame.core :as rf :refer [dispatch reg-sub]]
             [re-frame.std-interceptors :refer [path]]
@@ -34,7 +35,7 @@
     persistence-on? (merge (storage/<-store local-storage-key))))
 
 (storage/register-store local-storage-key)
-(def persist-keys
+(def persist-db
   (rf/->interceptor
    :id local-storage-key
    :before (fn [context]
@@ -45,16 +46,41 @@
             (save-db! (get-in context [:effects :db]))
             context)))
 
-(reg-event-db
+(defn compose-interceptors [interceptors]
+  (rf/->interceptor
+   :id (keyword (cs/join "+" (map :id interceptors)))
+   :before (apply comp (keep :before interceptors))
+   :after (apply comp (reverse (keep :after interceptors)))))
+
+(rf/reg-cofx
+ :new-uuids
+ (fn [coeffects _]
+   (assoc coeffects :new-uuids (repeatedly 5 random-uuid))))
+
+(rf/reg-cofx
+ :current-time
+ (fn [coeffects _]
+   (assoc coeffects :now (js/Date.))))
+
+(def full-context
+  (compose-interceptors [(undoable)
+                         persist-db
+                         (rf/inject-cofx :new-uuids)
+                         (rf/inject-cofx :current-time)]))
+
+(reg-event-fx
  :initialize-db
- [persist-keys]
- (fn [db _]
-   (merge db/default-db
-          (cond-> db
-            (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
-            (nil? (::db/todos db)) (dissoc ::db/todos)
-            (empty? (::db/todos db)) (assoc ::db/edit-mode? true))
-          {::db/initialized? true})))
+ [persist-db (rf/inject-cofx :current-time)]
+ (fn [{:keys [db now]} _]
+   {:db (merge
+         db/default-db
+         (cond-> db
+           (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
+           (nil? (::db/todos db)) (dissoc ::db/todos)
+           (empty? (::db/todos db)) (assoc ::db/edit-mode? true)
+           ;; Safe upgrade from the version without timestamps
+           :always (update ::db/todos todos/attach-timestamps-if-none now))
+         {::db/initialized? true})}))
 
 (reg-event-db
  :set-active-page
@@ -68,7 +94,7 @@
 
 (reg-event-fx
  :generate-random-db
- [(undoable) persist-keys (rf/inject-cofx :random-db)]
+ [(undoable) persist-db (rf/inject-cofx :random-db)]
  (fn [{:keys [random-db]} _] {:db random-db}))
 
 (reg-event-fx
@@ -83,20 +109,15 @@
 
 ;; Todo-related
 
-(rf/reg-cofx
- :new-uuids
- (fn [coeffects _]
-   (assoc coeffects :new-uuids (repeatedly 5 random-uuid))))
-
 (reg-event-fx
  :edit-todo-by-path
- [(undoable) persist-keys (rf/inject-cofx :new-uuids) (path [::db/todos])]
+ [full-context (path [::db/todos])]
  (fn-traced [cofx params]
    {:db (todos/edit-todo-by-path cofx params)}))
 
 (reg-event-db
  :toggle-active-todo
- [(undoable) persist-keys]
+ [(undoable) persist-db]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (assoc db ::db/todos
           (todos/edit-todo-by-path {:db todos}
@@ -104,7 +125,7 @@
 
 (reg-event-db
  :expand-or-go-to-child
- [persist-keys]
+ [persist-db]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (let [active-todo (todos/get-by-path todos active-todo-path)]
      (cond
@@ -121,7 +142,7 @@
 
 (reg-event-db
  :collapse-or-go-to-parent
- [persist-keys]
+ [persist-db]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (let [active-todo (todos/get-by-path todos active-todo-path)]
      (cond
@@ -139,7 +160,7 @@
 
 (reg-event-db
  :cut-todos
- [persist-keys (undoable)]
+ [persist-db (undoable)]
  (fn [{:keys [::db/todos] :as db} [path]]
    (let [[remaining removed last?] (todos/cut-todos todos path)
          ;; If the last item in a list was removed, move the cursor upwards
@@ -159,9 +180,9 @@
 
 (reg-event-fx
  :split-todo
- [(undoable) persist-keys (rf/inject-cofx :new-uuids)]
- (fn [{:keys [new-uuids] {:keys [::db/todos] :as db} :db} [path inline?]]
-   (when-let [new-todos (todos/split-todo todos path new-uuids inline?)]
+ [full-context]
+ (fn [{:keys [new-uuids now] {:keys [::db/todos] :as db} :db} [path inline?]]
+   (when-let [new-todos (todos/split-todo todos path new-uuids now inline?)]
      {:db (merge db {::db/todos new-todos
                      ::db/active-todo-path (cond-> path (not inline?) (conj 0))
                      ::db/edit-mode? true})})))
@@ -173,19 +194,19 @@
 
 (reg-event-db
  :move-cursor-to-path
- [persist-keys (path ::db/active-todo-path)]
+ [persist-db (path ::db/active-todo-path)]
  (fn-traced [_ [index]] index))
 
 (reg-event-db
  :move-cursor-up
- [persist-keys]
+ [persist-db]
  (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (assoc db ::db/active-todo-path
           (todos/traverse-up todos active-todo-path true))))
 
 (reg-event-db
  :move-cursor-down
- [persist-keys]
+ [persist-db]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [append-depth]]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
@@ -193,20 +214,23 @@
 
 (reg-event-fx
  :insert-above
- [(undoable) persist-keys (rf/inject-cofx :new-uuids)]
+ [full-context]
  (fn-traced
-  [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
-  (let [new-todos (todos/insert-at todos active-todo-path (first new-uuids))]
-    {:db (merge db {::db/todos new-todos
-                    ::db/edit-mode? true})})))
+   [{:keys [new-uuids now]
+     {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
+   (let [new-todos (todos/insert-at todos active-todo-path
+                                    (first new-uuids) now)]
+     {:db (merge db {::db/todos new-todos
+                     ::db/edit-mode? true})})))
 
 (reg-event-fx
  :insert-below
- [(undoable) persist-keys (rf/inject-cofx :new-uuids)]
+ [full-context]
  (fn-traced
-  [{:keys [new-uuids] {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
+   [{:keys [new-uuids now]
+     {:keys [::db/todos ::db/active-todo-path] :as db} :db} _]
   (let [new-path (update active-todo-path (dec (count active-todo-path)) inc)
-        new-todos (todos/insert-at todos new-path (first new-uuids))]
+        new-todos (todos/insert-at todos new-path (first new-uuids) now)]
     {:db (merge db {::db/todos new-todos
                     ::db/active-todo-path new-path
                     ::db/edit-mode? true})})))
