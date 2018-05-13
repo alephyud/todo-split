@@ -27,6 +27,7 @@
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.4.0"]
                  [org.clojure/tools.reader "1.2.2"]
+                 [com.andrewmcveigh/cljs-time "0.5.2"]
                  [re-frame "0.10.5"]
                  [day8.re-frame/undo "0.3.2"]
                  [akiroz.re-frame/storage "0.1.2"]

@@ -4,7 +4,10 @@
             [clojure.spec.test.alpha :as stest]
             [todo-split.todos-unit-tests]
             [todo-split.integration-tests]
-            [figwheel.client :as fw]))
+            [figwheel.client :as fw]
+            [devtools.core :as devtools]))
+
+(devtools/install!)
 
 (enable-console-print!)
 

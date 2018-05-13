@@ -76,10 +76,10 @@
          db/default-db
          (cond-> db
            (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
-           (nil? (::db/todos db)) (dissoc ::db/todos)
-           (empty? (::db/todos db)) (assoc ::db/edit-mode? true)
            ;; Safe upgrade from the version without timestamps
-           :always (update ::db/todos todos/attach-timestamps-if-none now))
+           (seq? (::db/todos db)) (update ::db/todos todos/attach-timestamps now)
+           (nil? (::db/todos db)) (dissoc ::db/todos)
+           (empty? (::db/todos db)) (assoc ::db/edit-mode? true))
          {::db/initialized? true})}))
 
 (reg-event-db
@@ -115,13 +115,17 @@
  (fn-traced [cofx params]
    {:db (todos/edit-todo-by-path cofx params)}))
 
-(reg-event-db
+(reg-event-fx
  :toggle-active-todo
- [(undoable) persist-db]
- (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
-   (assoc db ::db/todos
-          (todos/edit-todo-by-path {:db todos}
-                                   [active-todo-path {:toggle-done true}]))))
+ ;; If the active task is leaf (no sub-tasks), toggles the "done" status.
+ ;; Otherwise, expands or collapses it.
+ [(undoable) persist-db (rf/inject-cofx :current-time)]
+ (fn [{{:keys [::db/active-todo-path ::db/todos] :as db} :db now :now} [_]]
+   {:pre [(inst? now)]}
+   {:db (assoc db ::db/todos
+               (todos/edit-todo-by-path
+                {:db todos :now now}
+                [active-todo-path {:toggle-status true}]))}))
 
 (reg-event-db
  :expand-or-go-to-child

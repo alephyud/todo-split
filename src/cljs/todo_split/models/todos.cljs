@@ -94,20 +94,30 @@
         (conj {::text "" ::uuid uuid ::created-at now})
         (into (subvec todos index)))))
 
+(defn change-todo
+  [todo {:keys [text done? toggle-done toggle-status collapsed?]}
+   new-uuids now]
+  (let [has-subtasks? (seq (::subtasks todo))
+        toggle-done (or toggle-done (and toggle-status (not has-subtasks?)))
+        toggle-collapsed (or toggle-done (and toggle-status has-subtasks?))
+        clear-done? (or (= false done?) (and toggle-done (::done-at todo)))]
+    (merge {::uuid (first new-uuids)
+            ::created-at now}
+           (cond-> todo clear-done? (dissoc ::done-at))
+           (when text {::text text})
+           (when (or done? (and toggle-done (not (::done-at todo))))
+             {::done-at now})
+           (when (some? collapsed?) {::collapsed? collapsed?})
+           (when toggle-collapsed {::collapsed? (not (::collapsed? todo))}))))
+
 (defn edit-todo-by-path
   "Replaces the text using the selected index path"
   [{todos :db :keys [new-uuids now] :as cofx}
-   [[index & rest-path] {:keys [text done? toggle-done collapsed?] :as params}]]
+   [[index & rest-path]
+    {:keys [text done? toggle-done toggle-status collapsed?] :as params}]]
   {:pre [(map? params)]}
   (if (empty? rest-path)
-    (update (or todos []) index
-            #(merge {::uuid (first new-uuids)
-                     ::created-at now} %
-                    (when text {::text text})
-                    (when done? {::done-at now})
-                    (when (= false done?) {::done-at nil})
-                    (when toggle-done {::done-at (when-not (::done-at %) now)})
-                    (when (some? collapsed?) {::collapsed? collapsed?})))
+    (update (or todos []) index change-todo params new-uuids now)
     (assoc-in todos [index ::subtasks]
               (edit-todo-by-path (update cofx :db get-in [index ::subtasks])
                                  [rest-path params]))))
@@ -171,11 +181,15 @@
 
 (defn done-status
   "Returns the total number of completed leaf subtasks and total number of
-  leaf subtasks (including the task itself, if it has no subtasks)."
+  leaf subtasks (including the task itself, if it has no subtasks), and the
+  date of completion of the last of its subtasks."
   [{:keys [::subtasks ::done-at] :as todo}]
   (if (empty? subtasks)
-    [(if done-at 1 0) 1]
-    (reduce (partial map +) (map done-status subtasks))))
+    [(if done-at 1 0) 1 done-at]
+    (reduce (fn [[comp-1 total-1 done-1] [comp-2 total-2 done-2]]
+              [(+ comp-1 comp-2) (+ total-1 total-2)
+               (when (and done-1 done-2) (max done-1 done-2))])
+            (map done-status subtasks))))
 
 ;; Service functions
 
@@ -187,15 +201,15 @@
 
 (defn attach-timestamps
   "Adds `now` as `::created-at` and, if applicable, as `::done-at` to the
-  task and all of its subtasks recursively."
-  [todo now]
-  (merge (dissoc todo ::done)
-         (when-not (::created-at todo) {::created-at now})
-         (when (::done? todo) {::done-at now})
-         (when-let [subtasks (seq (::subtasks todo))]
-           {::subtasks (mapv #(attach-timestamps % now) subtasks)})))
-
-(defn attach-timestamps-if-none
+  tasks and all of their subtasks recursively."
   [todos now]
-  (when (seq todos)
-    (mapv #(attach-timestamps % now) todos)))
+  (vec (for [todo todos]
+         (merge (cond-> todo
+                  :always (dissoc ::done)
+                  (nil? (::done-at todo)) (dissoc ::done-at))
+                (when-not (::created-at todo) {::created-at now})
+                (when (::done? todo) {::done-at now})
+                (when-let [subtasks (seq (::subtasks todo))]
+                  {::subtasks (attach-timestamps subtasks now)})))))
+
+#_(defn)

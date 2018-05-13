@@ -97,13 +97,12 @@
 (declare todolist)
 
 (defn subtasks-hidden [total-subtasks completed-subtasks]
-  [:div.small.text-muted {:style {:margin-right 20}}
-   (str total-subtasks
-        " item" (when (> total-subtasks 1) "s") " hidden"
-        (when (pos? completed-subtasks)
-          (str " (" (if (= total-subtasks completed-subtasks)
-                      "all" completed-subtasks)
-               " done)")))])
+  (str total-subtasks
+       " item" (when (> total-subtasks 1) "s") " hidden"
+       (when (pos? completed-subtasks)
+         (str " (" (if (= total-subtasks completed-subtasks)
+                     "all" completed-subtasks)
+              " done)"))))
 
 (defn todo-widget
   [path todo-item]
@@ -114,14 +113,15 @@
       (when (= path @(rf/subscribe [:active-todo-path]))
         (vh/scroll-into-view-if-needed! (r/dom-node this))))
     :reagent-render
-    (fn [path {:keys [::todos/text ::todos/subtasks
+    (fn [path {:keys [::todos/text ::todos/subtasks ::todos/created-at
                       ::todos/collapsed?] :as todo-item}]
       (let [active-path @(rf/subscribe [:active-todo-path])
             active? (= path active-path)
             editable? (and active? @(rf/subscribe [:edit-mode?]))
-            [completed-subtasks total-subtasks] (todos/done-status todo-item)
-            done? (= completed-subtasks total-subtasks)
-            depth (count (take-while identity (map = path active-path)))]
+            [done-subtasks total-subtasks done-at] (todos/done-status todo-item)
+            done? (= done-subtasks total-subtasks)
+            depth (count (take-while identity (map = path active-path)))
+            collapsed? (and (seq subtasks) collapsed?)]
         [:div.todo-wrapper
          {:style {:background-color (when (pos? depth) (selected-shade depth))}}
          [:div.todo-list-item
@@ -141,7 +141,7 @@
                            [:edit-todo-by-path path
                             {:collapsed? (not collapsed?)}])
                           (.stopPropagation e))}
-             (vh/completion-chart (/ completed-subtasks total-subtasks))]
+             (vh/completion-chart (/ done-subtasks total-subtasks))]
             [:i.icon
              {:class (if done? "fas fa-check text-success" "far fa-square")
               :on-click (fn [e]
@@ -157,8 +157,12 @@
                                       [:edit-todo-by-path path {:text %}]))
                          :on-stop #(rf/dispatch [:edit-mode-off])}]
             [:div.todo-text (str text " ")])
-          (when (and (seq subtasks) collapsed?)
-            [subtasks-hidden total-subtasks completed-subtasks])]
+          (when (or done? collapsed?))
+          [:div.small.text-muted {:style {:margin-right 20}}
+           (when done?
+             [:div (str done-at)])
+           (when collapsed?
+             [:div (subtasks-hidden total-subtasks done-subtasks)])]]
          (when (and (seq subtasks) (not collapsed?))
            [:div {:style {:margin-left 20}}
             [todolist path subtasks]])]))}))

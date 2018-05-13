@@ -51,3 +51,18 @@
      (rf/dispatch [:edit-todo-by-path [0] {:text "New text"}])
      (is (s/valid? ::db/db @re-frame.db/app-db))
      (is (= 3 (count @(rf/subscribe [:todos]))) "After undo and changes"))))
+
+(deftest toggle-done-test
+  (testing ":toggle-active-todo event should work normally"
+    (rf-test/run-test-sync
+     (clear-todos!)
+     (rf/dispatch [:edit-todo-by-path [0] {:text "Make sure this test works"}])
+     (rf/dispatch [:toggle-active-todo])
+     (is (s/valid? ::db/db @re-frame.db/app-db))
+     (is (= 1 (first (todos/done-status (first @(rf/subscribe [:todos]))))))
+     (rf/dispatch [:toggle-active-todo])
+     (is (s/valid? ::db/db @re-frame.db/app-db))
+     (is (= 0 (first (todos/done-status (first @(rf/subscribe [:todos]))))))
+     (rf/dispatch [:toggle-active-todo])
+     (is (s/valid? ::db/db @re-frame.db/app-db))
+     (is (= 1 (first (todos/done-status (first @(rf/subscribe [:todos])))))))))
