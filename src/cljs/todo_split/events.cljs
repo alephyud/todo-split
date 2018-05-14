@@ -34,6 +34,9 @@
   (cond-> db
     persistence-on? (merge (storage/<-store local-storage-key))))
 
+(def check-spec
+  (kee-frame.spec/spec-interceptor kee-frame.state/app-db-spec))
+
 (storage/register-store local-storage-key)
 (def persist-db
   (rf/->interceptor
@@ -65,19 +68,20 @@
 (def full-context
   (compose-interceptors [(undoable)
                          persist-db
+                         check-spec
                          (rf/inject-cofx :new-uuids)
                          (rf/inject-cofx :current-time)]))
 
 (reg-event-fx
  :initialize-db
- [persist-db (rf/inject-cofx :current-time)]
+ [persist-db check-spec (rf/inject-cofx :current-time)]
  (fn [{:keys [db now]} _]
    {:db (merge
          db/default-db
          (cond-> db
            (nil? (::db/active-todo-path db)) (dissoc ::db/active-todo-path)
            ;; Safe upgrade from the version without timestamps
-           (seq? (::db/todos db)) (update ::db/todos todos/attach-timestamps now)
+           (seq (::db/todos db)) (update ::db/todos todos/attach-timestamps now)
            (nil? (::db/todos db)) (dissoc ::db/todos)
            (empty? (::db/todos db)) (assoc ::db/edit-mode? true))
          {::db/initialized? true})}))
@@ -94,7 +98,7 @@
 
 (reg-event-fx
  :generate-random-db
- [(undoable) persist-db (rf/inject-cofx :random-db)]
+ [(undoable) persist-db check-spec (rf/inject-cofx :random-db)]
  (fn [{:keys [random-db]} _] {:db random-db}))
 
 (reg-event-fx
@@ -119,7 +123,7 @@
  :toggle-active-todo
  ;; If the active task is leaf (no sub-tasks), toggles the "done" status.
  ;; Otherwise, expands or collapses it.
- [(undoable) persist-db (rf/inject-cofx :current-time)]
+ [(undoable) persist-db check-spec (rf/inject-cofx :current-time)]
  (fn [{{:keys [::db/active-todo-path ::db/todos] :as db} :db now :now} [_]]
    {:pre [(inst? now)]}
    {:db (assoc db ::db/todos
@@ -129,7 +133,7 @@
 
 (reg-event-db
  :expand-or-go-to-child
- [persist-db]
+ [persist-db check-spec]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (let [active-todo (todos/get-by-path todos active-todo-path)]
      (cond
@@ -146,7 +150,7 @@
 
 (reg-event-db
  :collapse-or-go-to-parent
- [persist-db]
+ [persist-db check-spec]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [_]]
    (let [active-todo (todos/get-by-path todos active-todo-path)]
      (cond
@@ -164,7 +168,7 @@
 
 (reg-event-db
  :cut-todos
- [persist-db (undoable)]
+ [persist-db check-spec (undoable)]
  (fn [{:keys [::db/todos] :as db} [path]]
    (let [[remaining removed last?] (todos/cut-todos todos path)
          ;; If the last item in a list was removed, move the cursor upwards
@@ -198,19 +202,19 @@
 
 (reg-event-db
  :move-cursor-to-path
- [persist-db (path ::db/active-todo-path)]
+ [persist-db check-spec (path ::db/active-todo-path)]
  (fn-traced [_ [index]] index))
 
 (reg-event-db
  :move-cursor-up
- [persist-db]
+ [persist-db check-spec]
  (fn-traced [{:keys [::db/active-todo-path ::db/todos] :as db} _]
    (assoc db ::db/active-todo-path
           (todos/traverse-up todos active-todo-path true))))
 
 (reg-event-db
  :move-cursor-down
- [persist-db]
+ [persist-db check-spec]
  (fn [{:keys [::db/active-todo-path ::db/todos] :as db} [append-depth]]
    (let [n (count todos)]
      (assoc db ::db/active-todo-path
@@ -251,7 +255,15 @@
 
 ;;;; Subscriptions
 
-(reg-sub :todos ::db/todos)
+(reg-sub
+ :todos
+ (fn [db [_ {:keys [done?]}]]
+   (let [all-todos (::db/todos db)
+         todo-done? #(let [[done total] (todos/done-status %)] (= done total))]
+     (cond
+       (nil? done?) all-todos
+       done? (filter todo-done? all-todos)
+       (not done?) (remove todo-done? all-todos)))))
 
 (reg-sub :db-initialized? ::db/initialized?)
 
