@@ -35,19 +35,31 @@
         over-top? (< (- (.-offsetTop elem) (.-offsetTop parent))
                      (.-scrollTop parent))
         over-bottom? (> (- (+ (.-offsetTop elem) (.-clientHeight elem))
-                            (.-offsetTop parent) parent-border-top)
-                         (+ (.-scrollTop parent) (.-clientHeight parent)))
+                           #_(.-offsetTop parent) parent-border-top)
+                        (+ (.-scrollTop parent) (.-clientHeight parent)))
         over-left? (< (- (.-offsetLeft elem) (.-offsetLeft parent))
                       (.-scrollLeft parent))
         over-right? (> (- (+ (.-offsetLeft elem) (.-clientWidth elem))
-                           (.-offsetLeft parent) parent-border-left)
-                        (+ (.-scrollLeft parent) (.-clientWidth parent)))
-        align-with-top? (and over-top? (not over-bottom?))]
-    #_(println "Check: " (.-offsetTop elem) (.-clientHeight elem)
+                          (.-offsetLeft parent) parent-border-left)
+                       (+ (.-scrollLeft parent) (.-clientWidth parent)))
+        align-with-top? (and over-top? (not over-bottom?))
+        center? true]
+    (println "Check:" (.-offsetTop elem) (.-clientHeight elem)
              (.-offsetTop parent) parent-border-top
-             (.-scrollTop parent) (.-clientHeight parent))
-    (when (or over-top? over-bottom? over-left? over-right?)
-      (.scrollIntoView elem align-with-top?))))
+             (.-scrollTop parent) (.-clientHeight parent) over-bottom?)
+    (if center?
+      (do (when (or over-top? over-bottom?)
+            (set! (.-scrollTop parent)
+                  (- (+ (.-offsetTop elem) (/ (.-clientHeight elem) 2))
+                     #_(.-offsetTop parent) (/ (.-clientHeight parent) 2)
+                     parent-border-top)))
+          (when (or over-left? over-right?)
+            (set! (.-scrollLeft parent)
+                  (- (+ (.-offsetLeft elem) (/ (.-clientWidth elem) 2))
+                     (.-offsetLeft parent) (/ (.-clientWidth parent) 2)
+                     parent-border-left))))
+      (when (or over-top? over-bottom? over-left? over-right?)
+        (.scrollIntoView elem align-with-top?)))))
 
 (defn completion-chart [percentage]
   (let [radius 0.9
