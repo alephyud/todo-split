@@ -47,8 +47,8 @@
                        (rf/dispatch (if (.-shiftKey event)
                                       [:insert-below] [:move-cursor-down 1])))
     KeyCodes.ESC (do (save) (stop))
-    KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]))
-    KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down 1]))
+    KeyCodes.UP (do (save) (rf/dispatch [:move-cursor-up]) (stop))
+    KeyCodes.DOWN (do (save) (rf/dispatch [:move-cursor-down 1] (stop)))
     nil))
 
 (defn todo-input [{:keys [text on-save on-stop]}]
@@ -198,5 +198,9 @@
        (let [todos @(rf/subscribe [:todos])]
          [:div.container.app-container
           [todolist [] todos]
+          #_[[:h2.mt-3 "Done items"]
+             [todolist [] @(rf/subscribe [:todos {:done? true}])]
+             [:h2.mt-3 "Active items"]
+             [todolist [] @(rf/subscribe [:todos {:done? false}])]]
           (when (empty? todos)
             [initial-advice])])))))

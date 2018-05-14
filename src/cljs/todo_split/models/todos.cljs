@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as gen]
             [clojure.string :as cs]
+            [cljs-time.coerce :as tc]
             [todo-split.models.todos.gen :as todos.gen]))
 
 (s/def ::uuid (s/spec #(partial instance? UUID) :gen gen/uuid))
@@ -212,4 +213,6 @@
                 (when-let [subtasks (seq (::subtasks todo))]
                   {::subtasks (attach-timestamps subtasks now)})))))
 
-#_(defn)
+(defn done-date [todo]
+  (let [[_ _ done-ts] (done-status todo)]
+    (when done-ts (str (tc/to-local-date done-ts)))))
