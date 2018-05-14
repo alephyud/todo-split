@@ -22,7 +22,9 @@
 
 (defn scroll-into-view-if-needed! [elem]
   ;; https://gist.github.com/hsablonniere/2581101
-  (let [parent js/document.body.parentElement ; (.-parentNode elem)
+  (let [parent (loop [e (.-parentNode elem)]
+                 (if (#{"BODY" "MAIN"} (.-tagName e))
+                   e (recur (.-parentNode e))))
         parent-style (js/window.getComputedStyle parent nil)
         parent-border-top (-> parent-style
                               (.getPropertyValue "border-top-width")

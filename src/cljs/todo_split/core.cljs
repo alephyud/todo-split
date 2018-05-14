@@ -45,7 +45,8 @@
 (defn page []
   [:div.app-page 
    [navbar]
-   [(#'pages (or (:handler @(rf/subscribe [:kee-frame/route])) :home))]])
+   [:main
+    [(#'pages (or (:handler @(rf/subscribe [:kee-frame/route])) :home))]]])
 
 ;; -------------------------
 ;; Routes

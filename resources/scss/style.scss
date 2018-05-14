@@ -3,7 +3,22 @@
 @import "node_modules/@fortawesome/fontawesome-free-webfonts/scss/fa-regular";
 @import "node_modules/@fortawesome/fontawesome-free-webfonts/scss/fa-solid";
 
-html, body, #app, .app-page {
+body {
+  height: 100vh;
+  position: relative;
+  overflow-y: hidden;
+}
+
+main {
+  position: absolute;
+  bottom: 0;
+  top: 56px;
+  left: 0;
+  right: 0;
+  overflow-y: scroll;
+}
+
+#app {
   height: 100%;
 }
 
@@ -24,12 +39,7 @@ html, body, #app, .app-page {
 }
 
 .app-container {
-  margin: 15px;
-}
-
-.container {
-  margin-left: auto;
-  margin-right: auto;
+  margin: 15px auto;
 }
 
 .todo-wrapper {
