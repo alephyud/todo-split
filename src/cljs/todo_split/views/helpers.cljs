@@ -44,7 +44,7 @@
                        (+ (.-scrollLeft parent) (.-clientWidth parent)))
         align-with-top? (and over-top? (not over-bottom?))
         center? true]
-    (println "Check:" (.-offsetTop elem) (.-clientHeight elem)
+    #_(println "Check:" (.-offsetTop elem) (.-clientHeight elem)
              (.-offsetTop parent) parent-border-top
              (.-scrollTop parent) (.-clientHeight parent) over-bottom?)
     (if center?
