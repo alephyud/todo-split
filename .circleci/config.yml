@@ -16,4 +16,3 @@ jobs:
           paths: ["~/.m2"]
           key: todo-split-{{ checksum "project.clj" }}
       - run: lein test
-
