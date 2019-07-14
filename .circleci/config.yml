@@ -4,7 +4,7 @@ jobs:
   build:
     working_directory: ~/repo
     docker:
-      - image: circleci/clojure-browsers:lein-2.9.0
+      - image: circleci/clojure:lein-2.9.0-browsers
     environment:
       CI: true
     steps:
