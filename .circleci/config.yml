@@ -4,7 +4,7 @@ jobs:
   build:
     working_directory: ~/repo
     docker:
-      - image: circleci/clojure:lein-2.9.0
+      - image: circleci/clojure-browsers:lein-2.9.0
     environment:
       CI: true
     steps:
@@ -12,7 +12,11 @@ jobs:
       - restore_cache:
           key: todo-split-{{ checksum "project.clj" }}
       - run: lein deps
+      - run: npm install
       - save_cache:
-          paths: ["~/.m2"]
+          paths:
+            - ~/.m2
+            - ~/node_modules"
           key: todo-split-{{ checksum "project.clj" }}
       - run: lein test
+      - run: lein doo chrome
