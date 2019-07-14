@@ -1,0 +1,19 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/clojure:lein-2.9.0
+    environment:
+      CI: true
+    steps:
+      - checkout
+      - restore_cache:
+          key: todo-split-{{ checksum "project.clj" }}
+      - run: lein deps
+      - save_cache:
+          paths: ["~/.m2"]
+          key: todo-split-{{ checksum "project.clj" }}
+      - run: lein test
+
